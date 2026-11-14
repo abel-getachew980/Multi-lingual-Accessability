@@ -2,6 +2,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;500;600;700&display=swap');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* WCAG AA compliant colors */
   --color-primary: #1e40af;
@@ -87,6 +91,35 @@ body {
   line-height: var(--line-height);
   color: var(--color-text);
   background-color: var(--color-background);
+}
+
+/* Restore heading hierarchy that Tailwind's preflight resets,
+   using the same relative, accessibility-aware font tokens. */
+@layer base {
+  h1 {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+  }
 }
 
 /* Skip link for keyboard users */
