@@ -6,7 +6,7 @@ import type {
 } from './types';
 import { AIProviderError } from './types';
 import { citationFromChunk } from './CitationTracker';
-import { formatContextLines } from './textUtils';
+import { formatContextLines, languageInstruction } from './textUtils';
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_MAX_RETRIES = 2;
@@ -146,17 +146,13 @@ export class CloudAIProvider implements AIProviderInterface {
   private buildMessages(request: AIQuery, chunks: ContentChunk[]): Message[] {
     const contextLines = formatContextLines(request, chunks);
 
-    const languageInstruction = request.language === 'am'
-      ? 'Respond in Amharic using Ethiopic script. Do not switch to English unless the learner explicitly asks.'
-      : 'Respond in English.';
-
     return [
       {
         id: 'system',
         role: 'system',
         content: [
           'You are a learning assistant. Answer only from the course content provided.',
-          languageInstruction,
+          languageInstruction(request.language),
           'If the answer is not present in the content, say that you do not know.',
           'Include source references when possible.',
           contextLines.length > 0 ? `Course content:\n${contextLines.join('\n')}` : '',

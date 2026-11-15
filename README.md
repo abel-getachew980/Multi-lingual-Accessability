@@ -65,7 +65,7 @@ npm run build
 | Teammate | Module | Files | Branch |
 |----------|--------|-------|--------|
 | 1 | Chat UI | `src/components/Chat/` | `feature/chat-ui` |
-| 2 | AI Providers | `src/services/ai/`, `src/app/api/ai/` | `feature/ai-providers` |
+| 2 | AI Providers | `src/services/ai/`, `src/app/api/ai/`, `src/components/CourseUploader/`, `src/app/courses/` | `feature/ai-providers` |
 | 3 | Telegram Bot | `telegram-bot/`, `src/app/api/telegram/` | `feature/telegram-bot` |
 | 4 | SMS Gateway | `sms-gateway/`, `src/app/api/sms/` | `feature/sms-gateway` |
 | 5 | Human Help | `src/components/HumanHelp/`, `src/services/webrtc/`, `src/app/api/help/` | `feature/human-help` |

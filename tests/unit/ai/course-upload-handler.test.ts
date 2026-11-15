@@ -65,6 +65,8 @@ describe('handleCourseUpload', () => {
     expect(body.success).toBe(true);
     expect(body.data.title).toBe('Biology');
     expect(body.data.chunks).toBeGreaterThan(0);
+    expect(body.data.course.title).toBe('Biology');
+    expect(body.data.course.chunks.length).toBeGreaterThan(0);
     expect(await indexer.getCourse(body.data.id)).toBeDefined();
   });
 

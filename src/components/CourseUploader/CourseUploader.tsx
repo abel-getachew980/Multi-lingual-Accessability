@@ -7,24 +7,17 @@ import {
   useState,
 } from 'react';
 import { useTutor } from '@/context/TutorContext';
-import { validateCourseFile } from '@/services/ai/courseFileValidation';
+import { CourseIndexer } from '@/services/ai/CourseIndexer';
+import {
+  SUPPORTED_COURSE_EXTENSIONS,
+  validateCourseFile,
+} from '@/services/ai/courseFileValidation';
+import type { CourseSummary } from '@/services/ai/courseUploadHandler';
 import { announceToScreenReader } from '@/utils/accessibility';
-import type { Language } from '@/types';
+import type { CourseContent, Language } from '@/types';
 import styles from './CourseUploader.module.css';
 
-const ACCEPTED_FILES = '.pdf,.docx,.txt,.text,.md,.markdown,.csv,.json,.html,.htm';
-
-interface UploadedCourse {
-  id: string;
-  title: string;
-  language: Language;
-  chunks: number;
-  totalPages: number;
-}
-
-interface CourseUploaderProps {
-  onUploaded?: (course: UploadedCourse) => void;
-}
+const ACCEPTED_FILES = SUPPORTED_COURSE_EXTENSIONS.map((extension) => `.${extension}`).join(',');
 
 type UploadStatus =
   | { kind: 'idle' }
@@ -59,9 +52,9 @@ const copy = {
   },
 } satisfies Record<Language, unknown>;
 
-export function CourseUploader({ onUploaded }: CourseUploaderProps) {
+export function CourseUploader() {
   const { preferences } = useTutor();
-  const text = copy[preferences.language];
+  const labels = copy[preferences.language];
   const id = useId();
   const titleId = `${id}-title`;
   const helpId = `${id}-help`;
@@ -73,21 +66,17 @@ export function CourseUploader({ onUploaded }: CourseUploaderProps) {
   const isUploading = status.kind === 'uploading';
 
   const uploadFile = async (file: File) => {
-    const validation = validateCourseFile({
-      name: file.name,
-      type: file.type,
-      size: file.size,
-    });
+    const validation = validateCourseFile(file);
 
     if (!validation.ok) {
-      const message = validation.code === 'FILE_TOO_LARGE' ? text.tooLarge : text.unsupported;
+      const message = validation.code === 'FILE_TOO_LARGE' ? labels.tooLarge : labels.unsupported;
       setStatus({ kind: 'error', message });
       announceToScreenReader(message, 'assertive');
       return;
     }
 
     setStatus({ kind: 'uploading', fileName: file.name });
-    announceToScreenReader(text.uploading(file.name), 'polite');
+    announceToScreenReader(labels.uploading(file.name), 'polite');
 
     try {
       const formData = new FormData();
@@ -100,16 +89,19 @@ export function CourseUploader({ onUploaded }: CourseUploaderProps) {
       const payload = await response.json();
 
       if (!response.ok || !payload.success) {
-        throw new Error(payload?.error?.message ?? text.error);
+        throw new Error(payload?.error?.message ?? labels.error);
       }
 
-      const uploaded = payload.data as UploadedCourse;
+      const uploaded = payload.data as CourseSummary & { course?: CourseContent };
+      if (uploaded.course) {
+        await new CourseIndexer().addCourse(uploaded.course).catch(() => undefined);
+      }
+
       setStatus({ kind: 'success', title: uploaded.title, chunks: uploaded.chunks });
-      announceToScreenReader(text.success(uploaded.title, uploaded.chunks), 'polite');
-      onUploaded?.(uploaded);
+      announceToScreenReader(labels.success(uploaded.title, uploaded.chunks), 'polite');
     } catch {
-      setStatus({ kind: 'error', message: text.error });
-      announceToScreenReader(text.error, 'assertive');
+      setStatus({ kind: 'error', message: labels.error });
+      announceToScreenReader(labels.error, 'assertive');
     }
   };
 
@@ -137,9 +129,14 @@ export function CourseUploader({ onUploaded }: CourseUploaderProps) {
   };
 
   return (
-    <section className={styles.container} aria-labelledby={titleId}>
-      <h2 id={titleId}>{text.title}</h2>
-      <p id={helpId} className={styles.help}>{text.help}</p>
+    <section
+      className={styles.container}
+      aria-labelledby={titleId}
+      lang={preferences.language}
+      dir={preferences.language === 'am' ? 'rtl' : 'ltr'}
+    >
+      <h2 id={titleId}>{labels.title}</h2>
+      <p id={helpId} className={styles.help}>{labels.help}</p>
 
       <div
         className={`${styles.dropZone} ${isDragging ? styles.dragging : ''}`}
@@ -161,18 +158,18 @@ export function CourseUploader({ onUploaded }: CourseUploaderProps) {
           aria-describedby={`${helpId} ${statusId}`}
         />
         <label htmlFor={inputId} className={styles.chooseButton}>
-          {text.choose}
+          {labels.choose}
         </label>
         <p className={styles.dropHint} aria-hidden="true">
-          {isDragging ? text.dropActive : text.help}
+          {isDragging ? labels.dropActive : labels.help}
         </p>
       </div>
 
-      <p className={styles.formats}>{text.formats}</p>
+      <p className={styles.formats}>{labels.formats}</p>
 
-      <div id={statusId} role="status" aria-live="polite" className={styles.status}>
-        {status.kind === 'uploading' && text.uploading(status.fileName)}
-        {status.kind === 'success' && text.success(status.title, status.chunks)}
+      <div id={statusId} className={styles.status}>
+        {status.kind === 'uploading' && labels.uploading(status.fileName)}
+        {status.kind === 'success' && labels.success(status.title, status.chunks)}
         {status.kind === 'error' && (
           <span className={styles.error}>{status.message}</span>
         )}

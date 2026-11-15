@@ -15,15 +15,21 @@ function errorResponse(status: number, code: string, message: string): Response 
   );
 }
 
-function courseSummary(course: CourseContent) {
+export interface CourseSummary {
+  id: string;
+  title: string;
+  language: CourseContent['language'];
+  totalPages: number;
+  chunks: number;
+}
+
+function courseSummary(course: CourseContent): CourseSummary {
   return {
     id: course.id,
     title: course.title,
-    titleAm: course.titleAm,
     language: course.language,
     totalPages: course.metadata.totalPages ?? 1,
     chunks: course.chunks?.length ?? 0,
-    metadata: course.metadata,
   };
 }
 
@@ -44,11 +50,7 @@ export async function handleCourseUpload(
     return errorResponse(400, 'FILE_REQUIRED', 'A file field is required');
   }
 
-  const validation = validateCourseFile({
-    name: file.name,
-    type: file.type,
-    size: file.size,
-  });
+  const validation = validateCourseFile(file);
 
   if (!validation.ok) {
     return errorResponse(
@@ -73,7 +75,10 @@ export async function handleCourseUpload(
 
     return Response.json({
       success: true,
-      data: courseSummary(course),
+      data: {
+        ...courseSummary(course),
+        course,
+      },
     });
   } catch (error) {
     console.error('Course upload failed', {

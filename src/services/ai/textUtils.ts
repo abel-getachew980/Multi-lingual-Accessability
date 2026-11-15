@@ -48,7 +48,7 @@ const STOP_WORDS = new Set([
 const ETHIOPIC_VARIANT_BASES: Array<[number, number]> = [
   [0x1210, 0x1200],
   [0x1280, 0x1200],
-  [0x1288, 0x1200],
+  [0x12B8, 0x1200],
   [0x1220, 0x1230],
   [0x12D0, 0x12A0],
   [0x1340, 0x1338],
@@ -102,4 +102,10 @@ export function formatContextLines(
       return `[${index + 1}] ${chunk.courseId}${page}${section}: ${chunk.content}`;
     }),
   ];
+}
+
+export function languageInstruction(language: 'am' | 'en'): string {
+  return language === 'am'
+    ? 'Respond in Amharic using Ethiopic script. Do not switch to English unless the learner explicitly asks.'
+    : 'Respond in English.';
 }

@@ -6,7 +6,7 @@ import type {
 } from './types';
 import { AIProviderError } from './types';
 import { citationFromChunk } from './CitationTracker';
-import { formatContextLines } from './textUtils';
+import { formatContextLines, languageInstruction } from './textUtils';
 
 const DEFAULT_MODEL = 'llama3';
 const DEFAULT_MAX_RETRIES = 1;
@@ -179,13 +179,9 @@ export class LocalAIProvider implements AIProviderInterface {
   private buildPrompt(request: AIQuery, chunks: ContentChunk[]): string {
     const context = formatContextLines(request, chunks);
 
-    const languageInstruction = request.language === 'am'
-      ? 'Respond in Amharic using Ethiopic script. Do not switch to English unless the learner explicitly asks.'
-      : 'Respond in English.';
-
     return [
       'You are a learning assistant. Answer only from the course content provided.',
-      languageInstruction,
+      languageInstruction(request.language),
       'If the answer is not present, say that you do not know.',
       context.length > 0 ? `Course content:\n${context.join('\n')}` : '',
       `Question: ${request.question}`,
