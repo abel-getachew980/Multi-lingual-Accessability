@@ -1,27 +1,31 @@
-// ============================================
-// AI SERVICES - Teammate 2
-// ============================================
-//
-// ASSIGNMENT: Build pluggable AI layer
-//
-// FILES TO CREATE IN THIS FOLDER:
-// - CloudAIProvider.ts
-// - LocalAIProvider.ts
-// - OfflineFAQProvider.ts
-// - CourseParser.ts
-// - CitationTracker.ts
-// - index.ts
-//
-// DEPENDENCIES:
-// - @/types
-// - @/services/storage
-//
-// REQUIREMENTS:
-// - Abstract provider interface
-// - Course content indexing
-// - Citation tracking
-// - Fallback to offline
-// - Handle rate limits
-// ============================================
-
-export {};
+export { createAIProvider, createAIProviderFromEnv, loadAIConfigFromEnv } from './AIProviderFactory';
+export { CloudAIProvider } from './CloudAIProvider';
+export { LocalAIProvider } from './LocalAIProvider';
+export { OfflineFAQProvider } from './OfflineFAQProvider';
+export { CourseParser, courseParser } from './CourseParser';
+export { CourseIndexer, courseIndexer } from './CourseIndexer';
+export { CitationTracker, citationFromChunk } from './CitationTracker';
+export {
+  handleAIQuery,
+  getStatus,
+  validateAIQueryRequest,
+  RateLimiter,
+} from './queryHandler';
+export { AIProviderError } from './types';
+export type {
+  AIProviderInterface,
+  ProviderQueryOptions,
+  FAQEntry,
+  FAQStorage,
+  OfflineFAQOptions,
+  ParsedFileInput,
+  CourseParseOptions,
+  ParsedCourse,
+  CourseSearchResult,
+  CourseSearchOptions,
+  CloudProviderConfig,
+  LocalProviderConfig,
+  ProviderFactoryOptions,
+  ValidatedAIQuery,
+  ValidationResult,
+} from './types';

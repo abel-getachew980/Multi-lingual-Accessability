@@ -153,7 +153,7 @@ export class OfflineFAQProvider implements AIProviderInterface {
     }
     
     // Try fuzzy match (contains)
-    for (const [key, value] of this.faqDatabase.entries()) {
+    for (const [key, value] of Array.from(this.faqDatabase.entries())) {
       if (normalizedQuestion.includes(key) || key.includes(normalizedQuestion)) {
         return value;
       }
