@@ -2,7 +2,25 @@ import '@testing-library/jest-dom';
 
 // Polyfill structuredClone for Node.js < 17
 if (typeof structuredClone !== 'function') {
-  global.structuredClone = (obj: unknown) => JSON.parse(JSON.stringify(obj));
+  const clone = <T>(value: T): T => {
+    if (value instanceof Date) {
+      return new Date(value.getTime()) as T;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(item => clone(item)) as T;
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [key, clone(item)])
+      ) as T;
+    }
+
+    return value;
+  };
+
+  global.structuredClone = clone;
 }
 
 // Mock Web Speech API for voice input tests

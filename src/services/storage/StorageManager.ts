@@ -228,8 +228,8 @@ export class StorageManager {
   }
 }
 
-// Singleton instance
 let storageManager: StorageManager | null = null;
+let storageManagerInit: Promise<StorageManager> | null = null;
 
 /**
  * Get or create the storage manager singleton
@@ -237,11 +237,19 @@ let storageManager: StorageManager | null = null;
 export async function getStorageManager(
   config?: Partial<StorageConfig>
 ): Promise<StorageManager> {
-  if (!storageManager) {
-    storageManager = new StorageManager(config);
-    await storageManager.init();
+  if (storageManager) {
+    if (storageManagerInit) {
+      await storageManagerInit;
+    }
+    return storageManager;
   }
-  return storageManager;
+
+  if (!storageManagerInit) {
+    const manager = new StorageManager(config);
+    storageManager = manager;
+    storageManagerInit = manager.init().then(() => manager);
+  }
+  return storageManagerInit;
 }
 
 /**
@@ -252,4 +260,5 @@ export function resetStorageManager(): void {
     storageManager.close();
     storageManager = null;
   }
+  storageManagerInit = null;
 }

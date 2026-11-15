@@ -141,7 +141,7 @@ describe('CourseCache', () => {
   };
 
   beforeEach(async () => {
-    store = new IndexedDBStore({ dbName: 'test-cache-db', dbVersion: 1 });
+    store = new IndexedDBStore({ dbName: getUniqueDbName(), dbVersion: 1 });
     await store.init();
     cache = new CourseCache(store);
   });
@@ -241,7 +241,7 @@ describe('OfflineQueue', () => {
   };
 
   beforeEach(async () => {
-    store = new IndexedDBStore({ dbName: 'test-queue-db', dbVersion: 1 });
+    store = new IndexedDBStore({ dbName: getUniqueDbName(), dbVersion: 1 });
     await store.init();
     queue = new OfflineQueue(store, 3);
   });
@@ -434,7 +434,7 @@ describe('ConversationStore', () => {
   };
 
   beforeEach(async () => {
-    store = new IndexedDBStore({ dbName: 'test-conv-db', dbVersion: 1 });
+    store = new IndexedDBStore({ dbName: getUniqueDbName(), dbVersion: 1 });
     await store.init();
     conversations = new ConversationStore(store);
   });
