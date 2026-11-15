@@ -42,13 +42,21 @@ export interface AiAnswer {
   provider?: string;
 }
 
+/** A short turn kept in the session so follow-up questions and help tickets have context. */
+export interface ConversationTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface SmsSession {
   phoneNumber: string;
   language: Language;
   lastActivity: number;
   /** Answer segments that did not fit in the previous reply. */
   pendingChunks: string[];
-  /** Set when the learner asked for a human tutor. */
+  /** Recent turns, capped by `maxHistoryTurns`. */
+  history: ConversationTurn[];
+  /** Set when a human tutor request was accepted by the help desk. */
   helpRequestedAt?: number;
 }
 
@@ -58,6 +66,8 @@ export type SmsCommandType =
   | 'help'
   | 'more'
   | 'reset'
+  | 'stop'
+  | 'start'
   | 'empty';
 
 export interface ParsedCommand {
@@ -77,6 +87,10 @@ export interface SmsConfig {
   /** Maximum SMS segments sent in a single reply (including the "MORE" hint). */
   maxSegmentsPerReply: number;
   maxQuestionLength: number;
+  /** Conversation turns kept per session for follow-ups and help tickets. */
+  maxHistoryTurns: number;
+  /** How long a help ticket counts as "already open" before a new one is created. */
+  helpRequestCooldownMs: number;
   rateLimitMax: number;
   rateLimitWindowMs: number;
   sessionTtlMs: number;

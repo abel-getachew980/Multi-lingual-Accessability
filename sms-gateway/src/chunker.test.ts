@@ -54,6 +54,27 @@ test('prefers word boundaries when splitting', () => {
   assert.deepEqual(chunkMessage('aaaa bbbbbb', 6), ['aaaa', 'bbbbbb']);
 });
 
+test('keeps menu lines intact when splitting', () => {
+  const text = 'ሰላም!\nLANG AM - አማርኛ\nLANG EN - English\nHELP - የሰው እርዳታ';
+  const chunks = chunkMessage(text, 40);
+
+  assert.ok(chunks.length > 1);
+  for (const chunk of chunks) {
+    assert.ok(Array.from(chunk).length <= 40, `chunk was ${chunk.length} chars`);
+  }
+  for (const line of text.split('\n')) {
+    assert.ok(
+      chunks.some((chunk) => chunk.includes(line)),
+      `line was split across messages: ${line}`,
+    );
+  }
+});
+
+test('falls back to a space or line break when the line break wastes the segment', () => {
+  assert.deepEqual(chunkMessage('ab\ncdefgh', 8), ['ab', 'cdefgh']);
+  assert.deepEqual(chunkMessage('ab cdefgh', 8), ['ab', 'cdefgh']);
+});
+
 test('rejects invalid limits', () => {
   assert.throws(() => chunkMessage('hello', 0), RangeError);
   assert.throws(() => chunkMessage('hello', -5), RangeError);

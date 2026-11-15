@@ -1,8 +1,10 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { HttpAiClient } from './aiClient';
 import { loadConfig, type GatewayConfig } from './config';
+import { HttpHelpClient } from './helpClient';
 import { MessageHandler } from './messageHandler';
 import { MessageQueue } from './messageQueue';
+import { InMemoryOptOutStore } from './optOutStore';
 import { SlidingWindowRateLimiter } from './rateLimiter';
 import { InMemorySessionStore } from './sessionManager';
 import { createSmsProvider } from './smsProvider';
@@ -77,6 +79,11 @@ export function createGateway(config: GatewayConfig = loadConfig()): Gateway {
       provider: config.ai.provider,
       timeoutMs: config.sms.aiTimeoutMs,
     }),
+    help: new HttpHelpClient({
+      url: config.help.url,
+      timeoutMs: config.help.timeoutMs,
+    }),
+    optOuts: new InMemoryOptOutStore(),
     sessions: new InMemorySessionStore(config.sms.sessionTtlMs),
     limiter: new SlidingWindowRateLimiter(
       config.sms.rateLimitMax,
@@ -85,6 +92,9 @@ export function createGateway(config: GatewayConfig = loadConfig()): Gateway {
     config: config.sms,
     onAiError: (error, question) => {
       console.error(`[sms] AI request failed for "${question.slice(0, 60)}"`, error);
+    },
+    onHelpError: (error, phoneNumber) => {
+      console.error(`[sms] help request failed for ${phoneNumber}`, error);
     },
   });
 

@@ -54,11 +54,29 @@ export function chunkMessage(text: string, maxLength?: number): string[] {
     let end = Math.min(start + limit, chars.length);
 
     if (end < chars.length) {
+      let newlineBreak = -1;
+      let spaceBreak = -1;
+
       for (let i = end - 1; i > start; i--) {
-        if (chars[i] === ' ' || chars[i] === '\n') {
-          end = i;
-          break;
+        const char = chars[i];
+
+        if (char === '\n') {
+          if (newlineBreak === -1) newlineBreak = i;
+          if (spaceBreak === -1) spaceBreak = i;
+        } else if (char === ' ' && spaceBreak === -1) {
+          spaceBreak = i;
         }
+
+        if (newlineBreak !== -1 && spaceBreak !== -1) break;
+      }
+
+      // Prefer a line break so menus and citations stay readable, unless it
+      // would leave most of a segment empty.
+      const minUseful = start + Math.ceil(limit / 2);
+      if (newlineBreak > minUseful) {
+        end = newlineBreak;
+      } else if (spaceBreak > start) {
+        end = spaceBreak;
       }
     }
 

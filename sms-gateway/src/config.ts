@@ -15,6 +15,11 @@ export interface GatewayConfig {
     baseUrl: string;
     provider?: string;
   };
+  help: {
+    /** Full URL of the app's help endpoint. */
+    url: string;
+    timeoutMs: number;
+  };
   sms: SmsConfig;
 }
 
@@ -50,6 +55,7 @@ function readReplyMode(env: NodeJS.ProcessEnv): ReplyMode {
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig {
   const provider = readProvider(env);
+  const aiBaseUrl = env.AI_API_URL ?? 'http://localhost:3000';
 
   if (provider === 'twilio') {
     const missing = ['SMS_ACCOUNT_SID', 'SMS_AUTH_TOKEN', 'SMS_FROM_NUMBER'].filter(
@@ -71,13 +77,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
       webhookUrl: env.TWILIO_WEBHOOK_URL,
     },
     ai: {
-      baseUrl: env.AI_API_URL ?? 'http://localhost:3000',
+      baseUrl: aiBaseUrl,
       provider: env.AI_PROVIDER,
+    },
+    help: {
+      url:
+        env.HELP_API_URL ?? `${aiBaseUrl.replace(/\/+$/, '')}/api/help`,
+      timeoutMs: readInt(env, 'HELP_TIMEOUT_MS', 5_000),
     },
     sms: {
       defaultLanguage: readLanguage(env),
       maxSegmentsPerReply: readInt(env, 'SMS_MAX_SEGMENTS', 3),
       maxQuestionLength: readInt(env, 'SMS_MAX_QUESTION_LENGTH', 500),
+      maxHistoryTurns: readInt(env, 'SMS_MAX_HISTORY_TURNS', 6),
+      helpRequestCooldownMs: readInt(
+        env,
+        'HELP_REQUEST_COOLDOWN_MS',
+        10 * 60 * 1_000,
+      ),
       rateLimitMax: readInt(env, 'SMS_RATE_LIMIT_MAX', 10),
       rateLimitWindowMs: readInt(env, 'SMS_RATE_LIMIT_WINDOW_MS', 60_000),
       sessionTtlMs: readInt(env, 'SMS_SESSION_TTL_MS', 24 * 60 * 60 * 1_000),

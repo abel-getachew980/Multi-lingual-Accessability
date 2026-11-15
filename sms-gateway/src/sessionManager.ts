@@ -36,6 +36,7 @@ export class InMemorySessionStore {
       language: defaultLanguage,
       lastActivity: this.now(),
       pendingChunks: [],
+      history: [],
     };
 
     this.sessions.set(phoneNumber, session);

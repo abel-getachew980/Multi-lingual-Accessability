@@ -1,7 +1,11 @@
-import type { AiAnswer, Citation, Language } from './types';
+import type { AiAnswer, Citation, ConversationTurn, Language } from './types';
 
 export interface AiClient {
-  ask(question: string, language: Language): Promise<AiAnswer>;
+  ask(
+    question: string,
+    language: Language,
+    history?: ConversationTurn[],
+  ): Promise<AiAnswer>;
 }
 
 interface HttpAiClientOptions {
@@ -23,9 +27,23 @@ export class HttpAiClient implements AiClient {
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
-  async ask(question: string, language: Language): Promise<AiAnswer> {
+  async ask(
+    question: string,
+    language: Language,
+    history: ConversationTurn[] = [],
+  ): Promise<AiAnswer> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs);
+
+    // The app accepts Message[]; SMS only keeps role/content, so fill in the
+    // fields it needs and avoid sending anything the session does not have.
+    const conversationHistory = history.map((turn, index) => ({
+      id: `sms-history-${index}`,
+      role: turn.role,
+      content: turn.content,
+      language,
+      timestamp: new Date().toISOString(),
+    }));
 
     try {
       const response = await this.fetchImpl(
@@ -37,6 +55,7 @@ export class HttpAiClient implements AiClient {
             question,
             language,
             provider: this.options.provider,
+            ...(conversationHistory.length > 0 ? { conversationHistory } : {}),
           }),
           signal: controller.signal,
         },
