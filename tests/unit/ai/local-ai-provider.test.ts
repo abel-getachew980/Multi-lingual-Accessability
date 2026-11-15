@@ -76,3 +76,31 @@ describe('LocalAIProvider', () => {
     ).rejects.toThrow(/local ai request failed/i);
   });
 });
+
+describe('LocalAIProvider endpoint handling', () => {
+  it('appends the chat completions path to a /v1 base URL', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({ choices: [{ message: { content: 'ok' } }] }),
+    );
+
+    const provider = new LocalAIProvider({
+      endpoint: 'http://localhost:8000/v1',
+      fetchImpl: fetchMock,
+    });
+
+    await provider.query({ question: 'Hello', language: 'en' });
+
+    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:8000/v1/chat/completions');
+  });
+
+  it('treats a 404 health response as unavailable', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({}, 404));
+
+    const provider = new LocalAIProvider({
+      endpoint: 'http://localhost:11434',
+      fetchImpl: fetchMock,
+    });
+
+    await expect(provider.isAvailable()).resolves.toBe(false);
+  });
+});

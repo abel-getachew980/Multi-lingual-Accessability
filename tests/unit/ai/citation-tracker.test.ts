@@ -57,3 +57,14 @@ describe('CitationTracker', () => {
     expect(citations.map((citation) => citation.page)).toEqual([7, 9]);
   });
 });
+
+describe('CitationTracker document links', () => {
+  it('attaches document URLs when a mapping is available', () => {
+    const tracker = new CitationTracker({
+      courseTitles: { 'course-bio': 'Biology Basics' },
+      documentUrls: { 'course-bio': 'https://example.com/biology.pdf' },
+    });
+
+    expect(tracker.track(chunk).url).toBe('https://example.com/biology.pdf');
+  });
+});

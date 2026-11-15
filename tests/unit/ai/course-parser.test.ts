@@ -84,3 +84,28 @@ describe('CourseParser', () => {
     ).rejects.toThrow(/unsupported file type/i);
   });
 });
+
+describe('CourseParser sections', () => {
+  it('records markdown headings as chunk sections', async () => {
+    const parser = new CourseParser();
+    const course = await parser.parseFile({
+      name: 'cells.md',
+      type: 'text/markdown',
+      data: [
+        '# Biology',
+        '',
+        '## Cells',
+        '',
+        'Cells are the basic unit of life.',
+        '',
+        '## Energy',
+        '',
+        'Photosynthesis uses sunlight.',
+      ].join('\n'),
+    }, { maxChunkSize: 100 });
+
+    const sections = (course.chunks ?? []).map((chunk) => chunk.section);
+    expect(sections).toContain('Cells');
+    expect(sections).toContain('Energy');
+  });
+});

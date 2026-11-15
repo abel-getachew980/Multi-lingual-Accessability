@@ -145,3 +145,58 @@ describe('handleAIQuery', () => {
     expect(body.answer).toBe('Plants make food from sunlight.');
   });
 });
+
+describe('handleAIQuery conversation history', () => {
+  it('forwards conversation history to the provider', async () => {
+    const query = jest.fn().mockResolvedValue({
+      answer: 'Follow-up answer',
+      provider: 'offline',
+    });
+    const provider = {
+      getName: () => 'Spy',
+      isAvailable: async () => true,
+      query,
+    };
+
+    const response = await handleAIQuery(
+      request({
+        question: 'And then?',
+        language: 'en',
+        conversationHistory: [
+          {
+            id: 'm1',
+            role: 'user',
+            content: 'What is photosynthesis?',
+            language: 'en',
+            timestamp: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      }),
+      {
+        resolveProvider: () => provider,
+        rateLimiter: new RateLimiter({ limit: 100, windowMs: 60_000 }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const [aiQuery] = query.mock.calls[0];
+    expect(aiQuery.conversationHistory).toHaveLength(1);
+    expect(aiQuery.conversationHistory[0].content).toBe('What is photosynthesis?');
+  });
+
+  it('rejects invalid conversation history', async () => {
+    const response = await handleAIQuery(
+      request({
+        question: 'And then?',
+        language: 'en',
+        conversationHistory: [{ role: 'robot' }],
+      }),
+      {
+        resolveProvider: () => new OfflineFAQProvider(),
+        rateLimiter: new RateLimiter({ limit: 100, windowMs: 60_000 }),
+      },
+    );
+
+    expect(response.status).toBe(400);
+  });
+});

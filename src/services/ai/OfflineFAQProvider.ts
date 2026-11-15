@@ -6,44 +6,9 @@ import type {
   OfflineFAQOptions,
   ProviderQueryOptions,
 } from './types';
+import { normalizeText, tokenizeText } from './textUtils';
 
-const STOP_WORDS = new Set([
-  'a',
-  'an',
-  'and',
-  'are',
-  'as',
-  'at',
-  'be',
-  'by',
-  'do',
-  'does',
-  'for',
-  'from',
-  'how',
-  'i',
-  'in',
-  'is',
-  'it',
-  'me',
-  'my',
-  'of',
-  'on',
-  'or',
-  'please',
-  'tell',
-  'that',
-  'the',
-  'this',
-  'to',
-  'was',
-  'were',
-  'what',
-  'which',
-  'with',
-]);
-
-const DATABASE_NAME = 'ai-tutor';
+const DATABASE_NAME = 'ai-tutor-faqs';
 const DATABASE_VERSION = 1;
 const FAQ_STORE = 'faqs';
 
@@ -154,8 +119,8 @@ export class OfflineFAQProvider implements AIProviderInterface {
     const startedAt = Date.now();
     await this.ensureLoaded();
 
-    const normalizedQuestion = this.normalize(request.question);
-    const queryTokens = this.tokenize(request.question);
+    const normalizedQuestion = normalizeText(request.question);
+    const queryTokens = tokenizeText(request.question);
 
     let bestEntry: FAQEntry | undefined;
     let bestScore = 0;
@@ -252,7 +217,7 @@ export class OfflineFAQProvider implements AIProviderInterface {
     let best = 0;
 
     for (const candidate of candidates) {
-      const normalizedCandidate = this.normalize(candidate);
+      const normalizedCandidate = normalizeText(candidate);
       if (!normalizedCandidate) continue;
 
       if (normalizedCandidate === normalizedQuestion) {
@@ -269,7 +234,7 @@ export class OfflineFAQProvider implements AIProviderInterface {
         continue;
       }
 
-      const candidateTokens = this.tokenize(candidate);
+      const candidateTokens = tokenizeText(candidate);
       if (queryTokens.length === 0 || candidateTokens.length === 0) continue;
 
       const candidateSet = new Set(candidateTokens);
@@ -282,19 +247,6 @@ export class OfflineFAQProvider implements AIProviderInterface {
     }
 
     return best;
-  }
-
-  private tokenize(text: string): string[] {
-    return (text.toLowerCase().match(/[\w\u1200-\u137F]+/g) ?? [])
-      .filter((token) => !STOP_WORDS.has(token));
-  }
-
-  private normalize(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[^\w\u1200-\u137F\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
   }
 }
 

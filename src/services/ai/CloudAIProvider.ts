@@ -6,6 +6,7 @@ import type {
 } from './types';
 import { AIProviderError } from './types';
 import { citationFromChunk } from './CitationTracker';
+import { formatContextLines } from './textUtils';
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_MAX_RETRIES = 2;
@@ -69,12 +70,15 @@ export class CloudAIProvider implements AIProviderInterface {
       } catch (error) {
         lastError = error;
 
-        const status = error instanceof AIProviderError ? error.status : undefined;
-        const retryable = status === 429 || (status !== undefined && status >= 500) || status === undefined;
+        const retryable = error instanceof AIProviderError ? error.retryable : true;
 
         if (!retryable || attempt >= this.maxRetries) break;
         await this.sleep(500 * 2 ** attempt);
       }
+    }
+
+    if (lastError instanceof AIProviderError && !lastError.retryable) {
+      throw lastError;
     }
 
     const status = lastError instanceof AIProviderError ? lastError.status : undefined;
@@ -120,7 +124,10 @@ export class CloudAIProvider implements AIProviderInterface {
       return response;
     } catch (error) {
       if (error instanceof AIProviderError) throw error;
-      throw new AIProviderError('Cloud AI request failed', 'cloud', undefined, { cause: error });
+      throw new AIProviderError('Cloud AI request failed', 'cloud', undefined, {
+        cause: error,
+        retryable: true,
+      });
     } finally {
       clearTimeout(timeout);
     }
@@ -137,14 +144,7 @@ export class CloudAIProvider implements AIProviderInterface {
   }
 
   private buildMessages(request: AIQuery, chunks: ContentChunk[]): Message[] {
-    const contextLines = [
-      ...(request.context ?? []),
-      ...chunks.map((chunk, index) => {
-        const page = chunk.pageNumber ? `, page ${chunk.pageNumber}` : '';
-        const section = chunk.section ? `, ${chunk.section}` : '';
-        return `[${index + 1}] ${chunk.courseId}${page}${section}: ${chunk.content}`;
-      }),
-    ];
+    const contextLines = formatContextLines(request, chunks);
 
     return [
       {

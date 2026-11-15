@@ -2,15 +2,18 @@ import type { Citation, ContentChunk, Language } from '@/types';
 
 interface CitationTrackerOptions {
   courseTitles?: Record<string, string>;
+  documentUrls?: Record<string, string>;
   defaultSource?: string;
 }
 
 export class CitationTracker {
   private readonly courseTitles: Record<string, string>;
+  private readonly documentUrls: Record<string, string>;
   private readonly defaultSource?: string;
 
   constructor(options: CitationTrackerOptions = {}) {
     this.courseTitles = options.courseTitles ?? {};
+    this.documentUrls = options.documentUrls ?? {};
     this.defaultSource = options.defaultSource;
   }
 
@@ -22,6 +25,7 @@ export class CitationTracker {
 
     if (chunk.pageNumber !== undefined) citation.page = chunk.pageNumber;
     if (chunk.section) citation.section = chunk.section;
+    if (this.documentUrls[chunk.courseId]) citation.url = this.documentUrls[chunk.courseId];
 
     return { ...citation, ...overrides };
   }

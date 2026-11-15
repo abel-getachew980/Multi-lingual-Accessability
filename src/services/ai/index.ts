@@ -23,9 +23,12 @@ export type {
   ParsedCourse,
   CourseSearchResult,
   CourseSearchOptions,
+  CourseIndexStorage,
+  CourseIndexerOptions,
   CloudProviderConfig,
   LocalProviderConfig,
   ProviderFactoryOptions,
   ValidatedAIQuery,
   ValidationResult,
+  AIProviderErrorOptions,
 } from './types';

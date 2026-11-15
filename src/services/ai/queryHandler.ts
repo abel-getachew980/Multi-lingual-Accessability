@@ -1,11 +1,21 @@
-import type { AIProvider, Language } from '@/types';
+import type { AIProvider, Language, Message } from '@/types';
 import type { AIProviderInterface, ValidationResult } from './types';
 import { createAIProviderFromEnv } from './AIProviderFactory';
 import { OfflineFAQProvider } from './OfflineFAQProvider';
+import { courseIndexer } from './CourseIndexer';
 
 const MAX_QUESTION_LENGTH = 2_000;
 const VALID_LANGUAGES: Language[] = ['am', 'en'];
 const VALID_PROVIDERS: AIProvider[] = ['cloud', 'local', 'offline'];
+
+function parseTimestamp(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return new Date();
+}
 
 export function validateAIQueryRequest(input: unknown): ValidationResult {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -41,6 +51,43 @@ export function validateAIQueryRequest(input: unknown): ValidationResult {
     context = body.context.map((item) => String(item).trim()).filter(Boolean);
   }
 
+  let conversationHistory: Message[] | undefined;
+  if (body.conversationHistory !== undefined) {
+    if (!Array.isArray(body.conversationHistory)) {
+      return { ok: false, error: 'conversationHistory must be an array of messages' };
+    }
+
+    const history: Message[] = [];
+    for (let index = 0; index < body.conversationHistory.length; index += 1) {
+      const item = body.conversationHistory[index];
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return { ok: false, error: 'Each conversation history item must be a message object' };
+      }
+
+      const record = item as Record<string, unknown>;
+      const role = record.role;
+      if (
+        (role !== 'user' && role !== 'assistant' && role !== 'system')
+        || typeof record.content !== 'string'
+      ) {
+        return { ok: false, error: 'Conversation history messages require a valid role and content' };
+      }
+
+      const itemLanguage = record.language === 'am' || record.language === 'en'
+        ? record.language
+        : (language as Language);
+      history.push({
+        id: typeof record.id === 'string' ? record.id : `history-${index}`,
+        role,
+        content: record.content,
+        language: itemLanguage,
+        timestamp: parseTimestamp(record.timestamp),
+      });
+    }
+
+    conversationHistory = history.slice(-20);
+  }
+
   return {
     ok: true,
     value: {
@@ -48,6 +95,7 @@ export function validateAIQueryRequest(input: unknown): ValidationResult {
       language: language as Language,
       provider: provider as AIProvider,
       context,
+      conversationHistory,
     },
   };
 }
@@ -151,15 +199,18 @@ export async function handleAIQuery(
     return errorResponse(400, 'INVALID_REQUEST', validation.error);
   }
 
-  const { question, language, provider, context } = validation.value;
+  const { question, language, provider, context, conversationHistory } = validation.value;
   const resolveProvider = dependencies.resolveProvider
     ?? ((selectedProvider: AIProvider) => createAIProviderFromEnv({}, selectedProvider));
 
   const startedAt = Date.now();
+  const contextChunks = (await courseIndexer.search(question, { language, limit: 5 }))
+    .map((result) => result.chunk);
+  const aiQuery = { question, language, context, conversationHistory };
 
   try {
     const aiProvider = resolveProvider(provider);
-    const result = await aiProvider.query({ question, language, context });
+    const result = await aiProvider.query(aiQuery, { contextChunks });
 
     return Response.json({
       success: true,
@@ -174,7 +225,7 @@ export async function handleAIQuery(
     if (provider !== 'offline') {
       try {
         const offlineProvider = dependencies.offlineProvider ?? defaultOfflineProvider;
-        const fallback = await offlineProvider.query({ question, language, context });
+        const fallback = await offlineProvider.query(aiQuery, { contextChunks });
 
         return Response.json({
           success: true,

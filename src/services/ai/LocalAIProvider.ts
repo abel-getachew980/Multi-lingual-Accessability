@@ -6,6 +6,7 @@ import type {
 } from './types';
 import { AIProviderError } from './types';
 import { citationFromChunk } from './CitationTracker';
+import { formatContextLines } from './textUtils';
 
 const DEFAULT_MODEL = 'llama3';
 const DEFAULT_MAX_RETRIES = 1;
@@ -40,7 +41,7 @@ export class LocalAIProvider implements AIProviderInterface {
   async query(request: AIQuery, options: ProviderQueryOptions = {}): Promise<AIResponse> {
     const startedAt = Date.now();
     const chatMode = this.isChatEndpoint();
-    const url = chatMode ? this.endpoint : `${this.endpoint}/api/generate`;
+    const url = this.requestUrl();
     const body = JSON.stringify(
       chatMode
         ? { model: this.model, messages: this.buildMessages(request, options.contextChunks ?? []), stream: false }
@@ -65,12 +66,15 @@ export class LocalAIProvider implements AIProviderInterface {
         };
       } catch (error) {
         lastError = error;
-        const status = error instanceof AIProviderError ? error.status : undefined;
-        const retryable = status === 429 || (status !== undefined && status >= 500) || status === undefined;
+        const retryable = error instanceof AIProviderError ? error.retryable : true;
 
         if (!retryable || attempt >= this.maxRetries) break;
         await this.sleep(500 * 2 ** attempt);
       }
+    }
+
+    if (lastError instanceof AIProviderError && !lastError.retryable) {
+      throw lastError;
     }
 
     const status = lastError instanceof AIProviderError ? lastError.status : undefined;
@@ -87,11 +91,11 @@ export class LocalAIProvider implements AIProviderInterface {
     const timeout = setTimeout(() => controller.abort(), 2_000);
 
     try {
-      const response = await this.fetchImpl(this.endpoint, {
+      const response = await this.fetchImpl(this.healthUrl(), {
         method: 'GET',
         signal: controller.signal,
       });
-      return response.status < 500;
+      return response.ok;
     } catch {
       return false;
     } finally {
@@ -104,7 +108,27 @@ export class LocalAIProvider implements AIProviderInterface {
   }
 
   private isChatEndpoint(): boolean {
-    return /\/v1\/|\/chat\/completions|\/api\/chat$/.test(this.endpoint);
+    return /\/chat\/completions$/.test(this.endpoint)
+      || /\/api\/chat$/.test(this.endpoint)
+      || /\/v1$/.test(this.endpoint);
+  }
+
+  private requestUrl(): string {
+    if (/\/chat\/completions$/.test(this.endpoint)
+      || /\/api\/chat$/.test(this.endpoint)
+      || /\/api\/generate$/.test(this.endpoint)) {
+      return this.endpoint;
+    }
+    if (/\/v1$/.test(this.endpoint)) return `${this.endpoint}/chat/completions`;
+    return `${this.endpoint}/api/generate`;
+  }
+
+  private healthUrl(): string {
+    if (/\/api\/generate$/.test(this.endpoint)) {
+      return this.endpoint.replace(/\/api\/generate$/, '/api/tags');
+    }
+    if (!this.isChatEndpoint()) return `${this.endpoint}/api/tags`;
+    return `${this.endpoint.replace(/\/chat\/completions$/, '')}/models`;
   }
 
   private async request(url: string, body: string): Promise<Response> {
@@ -130,7 +154,10 @@ export class LocalAIProvider implements AIProviderInterface {
       return response;
     } catch (error) {
       if (error instanceof AIProviderError) throw error;
-      throw new AIProviderError('Local AI request failed', 'local', undefined, { cause: error });
+      throw new AIProviderError('Local AI request failed', 'local', undefined, {
+        cause: error,
+        retryable: true,
+      });
     } finally {
       clearTimeout(timeout);
     }
@@ -150,14 +177,7 @@ export class LocalAIProvider implements AIProviderInterface {
   }
 
   private buildPrompt(request: AIQuery, chunks: ContentChunk[]): string {
-    const context = [
-      ...(request.context ?? []),
-      ...chunks.map((chunk, index) => {
-        const page = chunk.pageNumber ? `, page ${chunk.pageNumber}` : '';
-        const section = chunk.section ? `, ${chunk.section}` : '';
-        return `[${index + 1}] ${chunk.courseId}${page}${section}: ${chunk.content}`;
-      }),
-    ];
+    const context = formatContextLines(request, chunks);
 
     return [
       'You are a learning assistant. Answer only from the course content provided.',

@@ -110,3 +110,27 @@ describe('CourseIndexer', () => {
     expect(await indexer.getCourse('course-bio')).toBeUndefined();
   });
 });
+
+describe('CourseIndexer persistence', () => {
+  it('writes courses to the configured storage and reloads them', async () => {
+    const saved = new Map<string, CourseContent>();
+    const storage = {
+      getAll: async () => Array.from(saved.values()),
+      put: async (item: CourseContent) => {
+        saved.set(item.id, item);
+      },
+      clear: async () => {
+        saved.clear();
+      },
+    };
+
+    const first = new CourseIndexer({ storage });
+    await first.addCourse(course);
+
+    const second = new CourseIndexer({ storage });
+    const reloaded = await second.getCourse('course-bio');
+
+    expect(reloaded?.title).toBe('Biology Basics');
+    expect(saved.has('course-bio')).toBe(true);
+  });
+});

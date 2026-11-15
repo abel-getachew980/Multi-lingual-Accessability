@@ -168,23 +168,52 @@ export class CourseParser {
     const chunks: ContentChunk[] = [];
 
     pages.forEach((page, pageIndex) => {
-      const pageChunks = this.splitIntoChunks(
-        page,
-        options.maxChunkSize,
-        options.chunkOverlap,
-      );
+      for (const section of this.splitPageIntoSections(page)) {
+        const sectionChunks = this.splitIntoChunks(
+          section.text,
+          options.maxChunkSize,
+          options.chunkOverlap,
+        );
 
-      pageChunks.forEach((chunkContent) => {
-        chunks.push({
-          id: `${courseId}-chunk-${chunks.length + 1}`,
-          courseId,
-          content: chunkContent,
-          pageNumber: pageIndex + 1,
+        sectionChunks.forEach((chunkContent) => {
+          chunks.push({
+            id: `${courseId}-chunk-${chunks.length + 1}`,
+            courseId,
+            content: chunkContent,
+            pageNumber: pageIndex + 1,
+            ...(section.section ? { section: section.section } : {}),
+          });
         });
-      });
+      }
     });
 
     return chunks;
+  }
+
+  private splitPageIntoSections(page: string): Array<{ text: string; section?: string }> {
+    const sections: Array<{ text: string; section?: string }> = [];
+    let currentSection: string | undefined;
+    let buffer: string[] = [];
+
+    const flush = () => {
+      const text = buffer.join('\n').trim();
+      if (text) sections.push({ text, ...(currentSection ? { section: currentSection } : {}) });
+      buffer = [];
+    };
+
+    for (const line of page.split('\n')) {
+      const heading = line.match(/^#{1,6}\s+(.+)$/);
+      if (heading) {
+        flush();
+        currentSection = heading[1].trim();
+        buffer.push(line);
+      } else {
+        buffer.push(line);
+      }
+    }
+
+    flush();
+    return sections.length > 0 ? sections : [{ text: page }];
   }
 
   private resolveFormat(name: string, type?: string): 'text' | 'json' | 'html' | 'pdf' | 'docx' | null {

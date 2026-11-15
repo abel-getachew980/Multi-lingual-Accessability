@@ -6,13 +6,11 @@ import type {
   ContentChunk,
   CourseContent,
   Language,
+  Message,
 } from '@/types';
 
 export interface ProviderQueryOptions {
   contextChunks?: ContentChunk[];
-  sourceTitle?: string;
-  maxRetries?: number;
-  signal?: AbortSignal;
 }
 
 export interface AIProviderInterface {
@@ -75,6 +73,17 @@ export interface CourseSearchOptions {
   limit?: number;
 }
 
+export interface CourseIndexStorage {
+  getAll(): Promise<CourseContent[]>;
+  put(course: CourseContent): Promise<void>;
+  remove?(courseId: string): Promise<void>;
+  clear?(): Promise<void>;
+}
+
+export interface CourseIndexerOptions {
+  storage?: CourseIndexStorage;
+}
+
 export interface CloudProviderConfig {
   apiKey: string;
   endpoint: string;
@@ -108,20 +117,33 @@ export interface ValidatedAIQuery {
   language: Language;
   provider: AIProvider;
   context?: string[];
+  conversationHistory?: Message[];
 }
 
 export type ValidationResult =
   | { ok: true; value: ValidatedAIQuery }
   | { ok: false; error: string };
 
+export interface AIProviderErrorOptions extends ErrorOptions {
+  retryable?: boolean;
+}
+
 export class AIProviderError extends Error {
   readonly provider: AIProvider;
   readonly status?: number;
+  readonly retryable: boolean;
 
-  constructor(message: string, provider: AIProvider, status?: number, options?: ErrorOptions) {
+  constructor(
+    message: string,
+    provider: AIProvider,
+    status?: number,
+    options: AIProviderErrorOptions = {},
+  ) {
     super(message, options);
     this.name = 'AIProviderError';
     this.provider = provider;
     this.status = status;
+    this.retryable = options.retryable
+      ?? (status === 429 || (status !== undefined && status >= 500));
   }
 }

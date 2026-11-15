@@ -105,3 +105,25 @@ describe('CloudAIProvider', () => {
     expect(provider.getName()).toContain('Cloud');
   });
 });
+
+describe('CloudAIProvider retry policy', () => {
+  it('does not retry an empty successful response', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ choices: [] }));
+    const sleep = jest.fn().mockResolvedValue(undefined);
+
+    const provider = new CloudAIProvider({
+      apiKey: 'test-key',
+      endpoint: 'https://api.example.com/v1/chat/completions',
+      fetchImpl: fetchMock,
+      sleep,
+      maxRetries: 2,
+    });
+
+    await expect(
+      provider.query({ question: 'Hello', language: 'en' }),
+    ).rejects.toThrow(/empty response/i);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+});
