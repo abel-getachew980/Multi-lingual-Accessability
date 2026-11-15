@@ -292,7 +292,7 @@ export class IndexedDBStore {
    * Check if database is available
    */
   isAvailable(): boolean {
-    return this.db !== null && !this.db.closed;
+    return this.db !== null;
   }
 
   /**

@@ -37,12 +37,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    // TODO: Implement AI query logic
-    // 1. Validate input
-    // 2. Select provider
-    // 3. Query AI
-    // 4. Return response with citation
+   
     
     return NextResponse.json({
       success: true,
