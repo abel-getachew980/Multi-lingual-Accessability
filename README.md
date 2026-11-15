@@ -43,6 +43,7 @@ npm run build
 │   │   └── translations.ts     # Amharic/English
 │   ├── services/               # Business logic
 │   │   ├── ai/                 # Teammate 2: AI providers
+│   │   ├── humanHelp/          # Teammate 5: Help queue
 │   │   ├── storage/            # Teammate 6: Offline storage
 │   │   └── webrtc/             # Teammate 5: Screen sharing
 │   ├── types/                  # TypeScript types
@@ -68,7 +69,7 @@ npm run build
 | 2 | AI Providers | `src/services/ai/`, `src/app/api/ai/`, `src/components/CourseUploader/`, `src/app/courses/` | `feature/ai-providers` |
 | 3 | Telegram Bot | `telegram-bot/`, `src/app/api/telegram/` | `feature/telegram-bot` |
 | 4 | SMS Gateway | `sms-gateway/`, `src/app/api/sms/` | `feature/sms-gateway` |
-| 5 | Human Help | `src/components/HumanHelp/`, `src/services/webrtc/`, `src/app/api/help/` | `feature/human-help` |
+| 5 | Human Help | `src/components/HumanHelp/`, `src/services/humanHelp/`, `src/services/webrtc/`, `src/app/api/help/` | `feature/human-help` |
 | 6 | Offline Storage | `src/services/storage/` | `feature/offline-storage` |
 | 7 | Accessibility Tests | `tests/accessibility/`, `src/utils/accessibility.ts` | `feature/accessibility-tests` |
 | 8 | Settings UI | `src/components/Settings/` | `feature/settings-ui` |
@@ -125,7 +126,7 @@ Required for each module:
 - **AI Providers**: `AI_PROVIDER`, `CLOUD_AI_API_KEY`
 - **Telegram Bot**: `TELEGRAM_BOT_TOKEN`
 - **SMS Gateway**: `SMS_ACCOUNT_SID`, `SMS_AUTH_TOKEN`
-- **Human Help**: `WEBRTC_SIGNALING_SERVER`
+- **Human Help**: `WEBRTC_SIGNALING_SERVER` (server) and `NEXT_PUBLIC_WEBRTC_SIGNALING_SERVER` (browser)
 
 ## License
 

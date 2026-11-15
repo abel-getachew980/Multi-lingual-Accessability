@@ -4,7 +4,11 @@ import { useTutor } from '@/context/TutorContext';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { TypingIndicator } from './TypingIndicator';
-import { HumanHelpButton } from '@/components/HumanHelp/HumanHelpButton';
+import {
+  HumanHelpButton,
+  HumanHelpModal,
+  StatusNotifier,
+} from '@/components/HumanHelp';
 import styles from './Chat.module.css';
 
 /**
@@ -28,7 +32,6 @@ export function ChatContainer({ className }: ChatContainerProps) {
     isLoading,
     sendMessage,
     preferences,
-    humanHelpRequest,
     isOffline,
   } = useTutor();
 
@@ -58,11 +61,7 @@ export function ChatContainer({ className }: ChatContainerProps) {
             </span>
           )}
           
-          {humanHelpRequest && (
-            <span className={styles.helpActiveBadge} role="status">
-              {preferences.language === 'am' ? 'እርዳታ ንቁ' : 'Help Active'}
-            </span>
-          )}
+          <StatusNotifier />
         </div>
         
         {/* Human help button */}
@@ -88,6 +87,8 @@ export function ChatContainer({ className }: ChatContainerProps) {
         disabled={isLoading}
         language={preferences.language}
       />
+
+      <HumanHelpModal />
     </div>
   );
 }
