@@ -1,59 +1,92 @@
-// ============================================
-// HUMAN HELP API - Teammate 5
-// ============================================
-//
-// ASSIGNMENT: Build human help request handler
-//
-// ENDPOINTS:
-// - POST /api/help (request help)
-// - GET /api/help/:id (check status)
-// - DELETE /api/help/:id (cancel)
-//
-// DEPENDENCIES:
-// - @/types
-// - WebSocket or SSE for real-time updates
-//
-// REQUIREMENTS:
-// - Queue management
-// - Status updates
-// - Screen share signaling
-// ============================================
+import { NextResponse } from 'next/server';
+import { helpQueue, helpStatusPayload } from '@/services/humanHelp';
 
-import { NextRequest, NextResponse } from 'next/server';
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    
-    // TODO: Implement help request logic
-    // 1. Create help request
-    // 2. Add to queue
-    // 3. Notify available tutors
-    // 4. Return request ID
-    
-    return NextResponse.json({
-      success: true,
-      requestId: `help-${Date.now()}`,
-      status: 'pending',
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { success: false },
-      { status: 500 }
-    );
-  }
+function helpRequestIdFromUrl(request: Request): string | null {
+  return new URL(request.url).searchParams.get('id');
 }
 
-export async function GET(request: NextRequest) {
-  // TODO: Check help request status
+export async function POST(request: Request) {
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { success: false, error: 'Invalid JSON body' },
+      { status: 400 },
+    );
+  }
+
+  if (typeof body !== 'object' || body === null) {
+    return NextResponse.json(
+      { success: false, error: 'Invalid request body' },
+      { status: 400 },
+    );
+  }
+
+  const { userId, conversationHistory } = body as {
+    userId?: unknown;
+    conversationHistory?: unknown;
+  };
+
+  if (typeof userId !== 'string' || userId.trim().length === 0) {
+    return NextResponse.json(
+      { success: false, error: 'userId is required' },
+      { status: 400 },
+    );
+  }
+
+  const entry = helpQueue.create({
+    userId,
+    conversationHistory: Array.isArray(conversationHistory)
+      ? conversationHistory.slice(-50)
+      : [],
+  });
+
   return NextResponse.json({
-    status: 'pending',
-    position: 1,
-    estimatedWait: '2 minutes',
+    success: true,
+    requestId: entry.id,
+    status: entry.status,
+    position: entry.position,
   });
 }
 
-export async function DELETE(request: NextRequest) {
-  // TODO: Cancel help request
+export async function GET(request: Request) {
+  const id = helpRequestIdFromUrl(request);
+  if (!id) {
+    return NextResponse.json(
+      { success: false, error: 'id is required' },
+      { status: 400 },
+    );
+  }
+
+  const entry = helpQueue.get(id);
+  if (!entry) {
+    return NextResponse.json(
+      { success: false, error: 'Help request not found' },
+      { status: 404 },
+    );
+  }
+
+  return NextResponse.json(helpStatusPayload(entry));
+}
+
+export async function DELETE(request: Request) {
+  const id = helpRequestIdFromUrl(request);
+  if (!id) {
+    return NextResponse.json(
+      { success: false, error: 'id is required' },
+      { status: 400 },
+    );
+  }
+
+  const cancelled = helpQueue.cancel(id);
+  if (!cancelled) {
+    return NextResponse.json(
+      { success: false, error: 'Help request not found' },
+      { status: 404 },
+    );
+  }
+
   return NextResponse.json({ success: true });
 }

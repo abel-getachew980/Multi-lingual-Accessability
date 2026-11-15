@@ -8,7 +8,8 @@
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-duration);
+  transition: background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
 }
 
 .helpButton:hover {
@@ -17,6 +18,160 @@
 }
 
 .helpButton[aria-pressed="true"] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.helpButton:focus-visible,
+.shareButton:focus-visible,
+.stopButton:focus-visible,
+.cancelButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background: rgb(17 24 39 / 0.6);
+}
+
+.modal {
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-background);
+  color: var(--color-text);
+  box-shadow: 0 20px 50px rgb(0 0 0 / 0.25);
+}
+
+.modalTitle {
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-primary-dark);
+  font-size: 1.35rem;
+}
+
+.statusBlock {
+  display: grid;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+}
+
+.statusLine,
+.statusDetail,
+.hint,
+.error {
+  margin: 0;
+}
+
+.statusLabel {
+  font-weight: 700;
+}
+
+.statusDetail,
+.hint {
+  color: var(--color-text-light);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-lg);
+}
+
+.cancelButton,
+.secondaryButton,
+.shareButton,
+.stopButton {
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancelButton {
+  border: 2px solid var(--color-error);
   background: var(--color-error);
-  border-color: var(--color-error);
+  color: white;
+}
+
+.secondaryButton {
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.shareButton {
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+}
+
+.stopButton {
+  border: 2px solid var(--color-error);
+  background: var(--color-error);
+  color: white;
+}
+
+.shareButton:disabled,
+.stopButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.screenShare {
+  display: grid;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.error {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+@media (max-width: 30rem) {
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelButton,
+  .secondaryButton,
+  .shareButton,
+  .stopButton {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .helpButton {
+    transition: none;
+  }
 }

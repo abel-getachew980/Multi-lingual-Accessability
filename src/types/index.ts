@@ -183,6 +183,8 @@ export interface HumanHelpRequest {
   status: HumanHelpStatus;
   screenShareEnabled: boolean;
   assignedTutor?: string;
+  queuePosition?: number;
+  estimatedWait?: string;
 }
 
 export type HumanHelpStatus = 'pending' | 'connected' | 'in_progress' | 'resolved' | 'cancelled';
