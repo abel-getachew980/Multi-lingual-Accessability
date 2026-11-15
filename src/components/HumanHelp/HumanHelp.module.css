@@ -1,0 +1,22 @@
+/* HumanHelp Module Styles */
+
+.helpButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-success);
+  color: white;
+  border: 2px solid var(--color-success);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-duration);
+}
+
+.helpButton:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.helpButton[aria-pressed="true"] {
+  background: var(--color-error);
+  border-color: var(--color-error);
+}
