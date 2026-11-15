@@ -100,3 +100,23 @@ describe('OfflineFAQProvider', () => {
     expect(provider.getName()).toBe('Offline FAQ');
   });
 });
+
+describe('OfflineFAQProvider Ethiopic variants', () => {
+  it('matches Amharic questions written with homophone variants', async () => {
+    const provider = new OfflineFAQProvider({
+      entries: [
+        {
+          id: 'faq-variant',
+          question: 'What is peace?',
+          questionAm: 'ሰላም ምንድን ነው?',
+          answer: 'Peace is a state of calm.',
+          answerAm: 'ሰላም የመረጋጋት ሁኔታ ነው።',
+        },
+      ],
+    });
+
+    const response = await provider.query({ question: 'ሠላም ምንድን ነው?', language: 'am' });
+
+    expect(response.answer).toBe('ሰላም የመረጋጋት ሁኔታ ነው።');
+  });
+});

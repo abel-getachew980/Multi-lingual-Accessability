@@ -134,3 +134,37 @@ describe('CourseIndexer persistence', () => {
     expect(saved.has('course-bio')).toBe(true);
   });
 });
+
+describe('CourseIndexer Ethiopic variants', () => {
+  it('matches Amharic search text across homophone spellings', async () => {
+    const indexer = new CourseIndexer();
+    await indexer.addCourse({
+      ...course,
+      id: 'course-variant',
+      language: 'am',
+      chunks: [
+        {
+          id: 'chunk-variant',
+          courseId: 'course-variant',
+          content: 'ሰላም የመረጋጋት ሁኔታ ነው።',
+        },
+      ],
+    });
+
+    const results = await indexer.search('ሠላም');
+
+    expect(results[0]?.chunk.id).toBe('chunk-variant');
+  });
+});
+
+describe('CourseIndexer listing', () => {
+  it('lists indexed courses sorted by title', async () => {
+    const indexer = new CourseIndexer();
+    await indexer.addCourse(course);
+    await indexer.addCourse({ ...course, id: 'course-am', title: 'Amharic Basics' });
+
+    const titles = (await indexer.listCourses()).map((item) => item.title);
+
+    expect(titles).toEqual(['Amharic Basics', 'Biology Basics']);
+  });
+});

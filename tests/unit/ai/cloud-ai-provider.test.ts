@@ -127,3 +127,24 @@ describe('CloudAIProvider retry policy', () => {
     expect(sleep).not.toHaveBeenCalled();
   });
 });
+
+describe('CloudAIProvider Amharic prompting', () => {
+  it('instructs the model to answer in Amharic using Ethiopic script', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({ choices: [{ message: { content: 'መልስ' } }] }),
+    );
+
+    const provider = new CloudAIProvider({
+      apiKey: 'test-key',
+      endpoint: 'https://api.example.com/v1/chat/completions',
+      fetchImpl: fetchMock,
+    });
+
+    await provider.query({ question: 'ፎቶሲንተሲስ ምንድን ነው?', language: 'am' });
+
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const messages = JSON.stringify(JSON.parse(String(options.body)).messages);
+    expect(messages).toContain('Amharic');
+    expect(messages).toContain('Ethiopic');
+  });
+});

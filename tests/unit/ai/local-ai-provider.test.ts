@@ -104,3 +104,21 @@ describe('LocalAIProvider endpoint handling', () => {
     await expect(provider.isAvailable()).resolves.toBe(false);
   });
 });
+
+describe('LocalAIProvider Amharic prompting', () => {
+  it('instructs the model to answer in Amharic using Ethiopic script', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ response: 'መልስ' }));
+
+    const provider = new LocalAIProvider({
+      endpoint: 'http://localhost:11434',
+      fetchImpl: fetchMock,
+    });
+
+    await provider.query({ question: 'ፎቶሲንተሲስ ምንድን ነው?', language: 'am' });
+
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(String(options.body));
+    expect(body.prompt).toContain('Amharic');
+    expect(body.prompt).toContain('Ethiopic');
+  });
+});

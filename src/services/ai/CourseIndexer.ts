@@ -146,6 +146,13 @@ export class CourseIndexer {
     return this.courses.get(courseId)?.course;
   }
 
+  async listCourses(): Promise<CourseContent[]> {
+    await this.ensureLoaded();
+    return Array.from(this.courses.values())
+      .map((indexed) => indexed.course)
+      .sort((left, right) => left.title.localeCompare(right.title));
+  }
+
   async search(query: string, options: CourseSearchOptions = {}): Promise<CourseSearchResult[]> {
     const queryTokens = tokenizeText(query);
     if (queryTokens.length === 0) return [];

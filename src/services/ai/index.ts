@@ -11,6 +11,20 @@ export {
   validateAIQueryRequest,
   RateLimiter,
 } from './queryHandler';
+export {
+  handleCourseList,
+  handleCourseUpload,
+} from './courseUploadHandler';
+export {
+  validateCourseFile,
+  MAX_COURSE_FILE_SIZE,
+  SUPPORTED_COURSE_EXTENSIONS,
+} from './courseFileValidation';
+export {
+  normalizeEthiopic,
+  normalizeText,
+  tokenizeText,
+} from './textUtils';
 export { AIProviderError } from './types';
 export type {
   AIProviderInterface,
@@ -32,3 +46,7 @@ export type {
   ValidationResult,
   AIProviderErrorOptions,
 } from './types';
+export type {
+  CourseFileInfo,
+  CourseFileValidation,
+} from './courseFileValidation';

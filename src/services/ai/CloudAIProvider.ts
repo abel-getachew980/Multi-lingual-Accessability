@@ -146,14 +146,19 @@ export class CloudAIProvider implements AIProviderInterface {
   private buildMessages(request: AIQuery, chunks: ContentChunk[]): Message[] {
     const contextLines = formatContextLines(request, chunks);
 
+    const languageInstruction = request.language === 'am'
+      ? 'Respond in Amharic using Ethiopic script. Do not switch to English unless the learner explicitly asks.'
+      : 'Respond in English.';
+
     return [
       {
         id: 'system',
         role: 'system',
         content: [
           'You are a learning assistant. Answer only from the course content provided.',
+          languageInstruction,
           'If the answer is not present in the content, say that you do not know.',
-          'Use the same language as the learner and include source references when possible.',
+          'Include source references when possible.',
           contextLines.length > 0 ? `Course content:\n${contextLines.join('\n')}` : '',
         ].filter(Boolean).join('\n\n'),
         language: request.language,

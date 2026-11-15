@@ -179,8 +179,13 @@ export class LocalAIProvider implements AIProviderInterface {
   private buildPrompt(request: AIQuery, chunks: ContentChunk[]): string {
     const context = formatContextLines(request, chunks);
 
+    const languageInstruction = request.language === 'am'
+      ? 'Respond in Amharic using Ethiopic script. Do not switch to English unless the learner explicitly asks.'
+      : 'Respond in English.';
+
     return [
       'You are a learning assistant. Answer only from the course content provided.',
+      languageInstruction,
       'If the answer is not present, say that you do not know.',
       context.length > 0 ? `Course content:\n${context.join('\n')}` : '',
       `Question: ${request.question}`,

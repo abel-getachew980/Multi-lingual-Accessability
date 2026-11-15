@@ -34,19 +34,60 @@ const STOP_WORDS = new Set([
   'what',
   'which',
   'with',
+  'ነው',
+  'ናቸው',
+  'የ',
+  'ወደ',
+  'ከ',
+  'በ',
+  'ለ',
+  'እና',
+  'ስለ',
 ]);
 
-export function tokenizeText(text: string): string[] {
-  return (text.toLowerCase().match(/[\w\u1200-\u137F]+/g) ?? [])
-    .filter((token) => !STOP_WORDS.has(token));
+const ETHIOPIC_VARIANT_BASES: Array<[number, number]> = [
+  [0x1210, 0x1200],
+  [0x1280, 0x1200],
+  [0x1288, 0x1200],
+  [0x1220, 0x1230],
+  [0x12D0, 0x12A0],
+  [0x1340, 0x1338],
+];
+
+const ETHIOPIC_VARIANT_PATTERN = new RegExp(
+  `[${ETHIOPIC_VARIANT_BASES
+    .map(([base]) => `${String.fromCharCode(base)}-${String.fromCharCode(base + 7)}`)
+    .join('')}]`,
+  'g',
+);
+
+const ETHIOPIC_VARIANT_MAP = new Map<string, string>();
+for (const [variantBase, canonicalBase] of ETHIOPIC_VARIANT_BASES) {
+  for (let order = 0; order < 8; order += 1) {
+    ETHIOPIC_VARIANT_MAP.set(
+      String.fromCharCode(variantBase + order),
+      String.fromCharCode(canonicalBase + order),
+    );
+  }
+}
+
+export function normalizeEthiopic(text: string): string {
+  return text.replace(
+    ETHIOPIC_VARIANT_PATTERN,
+    (character) => ETHIOPIC_VARIANT_MAP.get(character) ?? character,
+  );
 }
 
 export function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
+  return normalizeEthiopic(text.toLowerCase())
     .replace(/[^\w\u1200-\u137F\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+export function tokenizeText(text: string): string[] {
+  return (normalizeText(text).match(/[\w\u1200-\u137F]+/g) ?? [])
+    .filter((token) => !STOP_WORDS.has(token));
 }
 
 export function formatContextLines(
