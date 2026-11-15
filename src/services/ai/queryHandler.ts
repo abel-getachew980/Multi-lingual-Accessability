@@ -204,8 +204,9 @@ export async function handleAIQuery(
     ?? ((selectedProvider: AIProvider) => createAIProviderFromEnv({}, selectedProvider));
 
   const startedAt = Date.now();
-  const contextChunks = (await courseIndexer.search(question, { language, limit: 5 }))
-    .map((result) => result.chunk);
+  const contextChunks = await courseIndexer.search(question, { language, limit: 5 })
+    .then((results) => results.map((result) => result.chunk))
+    .catch(() => []);
   const aiQuery = { question, language, context, conversationHistory };
 
   try {
