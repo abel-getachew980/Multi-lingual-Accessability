@@ -7,7 +7,7 @@
   gap: var(--spacing-xs);
   min-height: 44px;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   border-radius: 8px;
   background: var(--color-background);
   color: var(--color-text);
@@ -71,7 +71,7 @@
   min-width: 44px;
   min-height: 44px;
   padding: var(--spacing-xs);
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   border-radius: 8px;
   background: var(--color-background);
   color: var(--color-text);
@@ -130,7 +130,7 @@
   gap: var(--spacing-sm);
   min-height: 44px;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   border-radius: 8px;
   background: var(--color-background);
   cursor: pointer;
@@ -234,7 +234,7 @@
 }
 
 .secondaryButton {
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   background: var(--color-background);
   color: var(--color-text);
 }

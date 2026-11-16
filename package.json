@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:a11y": "jest --config jest.config.ts",
+    "test": "jest --config jest.config.ts",
+    "test:a11y": "jest --config jest.config.ts tests/accessibility",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -26,7 +27,9 @@
     "@axe-core/react": "^4.8.5",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^14.2.0",
+    "@testing-library/user-event": "^14.6.12",
     "@types/jest": "^29.5.0",
+    "@types/jest-axe": "^3.5.9",
     "@types/node": "^20.11.0",
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18.2.0",
@@ -36,6 +39,7 @@
     "eslint-config-next": "14.2.0",
     "eslint-plugin-jsx-a11y": "^6.8.0",
     "jest": "^29.7.0",
+    "jest-axe": "^11.0.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.5.33",
     "tailwindcss": "^3.4.17",

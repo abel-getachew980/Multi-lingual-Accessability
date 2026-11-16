@@ -286,7 +286,7 @@
 .messageTextarea {
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   border-radius: 8px;
   font-family: inherit;
   font-size: var(--font-size-base);
@@ -331,7 +331,7 @@
 
 .clearButton {
   background: transparent;
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   color: var(--color-text-light);
 }
 
@@ -360,7 +360,7 @@
 .voiceInputButton {
   padding: var(--spacing-sm);
   background: transparent;
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--color-border-strong);
   border-radius: 8px;
   font-size: var(--font-size-xl);
   cursor: pointer;

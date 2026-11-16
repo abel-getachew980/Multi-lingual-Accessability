@@ -72,7 +72,7 @@ npm run build
 | 4 | SMS Gateway | `sms-gateway/`, `src/app/api/sms/` | ✅ Done |
 | 5 | Human Help | `src/components/HumanHelp/`, `src/services/webrtc/`, `src/services/help/`, `src/app/api/help/` | ✅ Done |
 | 6 | Offline Storage | `src/services/storage/`, `public/sw.js` (built) | ✅ Done |
-| 7 | Accessibility Tests | `tests/accessibility/`, `src/utils/accessibility.ts` | 🚧 In progress |
+| 7 | Accessibility Tests | `tests/accessibility/`, `src/utils/accessibility.ts` | ✅ Done |
 | 8 | Settings UI | `src/components/Settings/` | ✅ Done |
 
 ## Working with Feature Branches
@@ -106,13 +106,36 @@ All modules must pass:
 - ✅ Zero critical/serious axe-core issues
 - ✅ RTL support for Amharic text
 
+### Automated checks
+
+```bash
+npm run test:a11y     # tests/accessibility only
+npm test              # whole Jest suite
+npm run typecheck
+```
+
+`tests/accessibility/` covers:
+
+| File | What it protects |
+|---|---|
+| `axe.test.tsx` | jsdom + jest-axe audits of the composer, settings dialog, help dialog and live status |
+| `keyboard-navigation.test.tsx` | Focus trap, Tab order, Enter/Shift+Enter, list keys, skip link |
+| `screen-reader.test.ts` | Polite/assertive live regions, reuse, clearing and the legacy API |
+| `contrast.test.ts` | Palette tokens read from `globals.css`, WCAG 2.1 ratios, high-contrast mode |
+| `zoom.test.ts` | Viewport scaling, rem typography, reflow rules, reduced motion, skip target |
+| `sound-notifications.test.ts` | Tone scheduling, volume clamping, autoplay failure and unsupported browsers |
+
+The parts a machine cannot verify — NVDA/TalkBack speech, 200%/400% zoom,
+sound-off use, offline behaviour and real help sessions — are in
+[`tests/accessibility/manual-checklist.md`](tests/accessibility/manual-checklist.md).
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: CSS Modules + CSS Variables
 - **PWA**: next-pwa for offline support
-- **Testing**: Jest + @axe-core/react
+- **Testing**: Jest + jest-axe + Testing Library
 - **Linting**: ESLint + jsx-a11y
 
 ## Environment Variables

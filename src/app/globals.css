@@ -14,10 +14,13 @@
   --color-background: #ffffff;
   --color-surface: #f9fafb;
   --color-border: #e5e7eb;
-  --color-focus: #f59e0b;
+  /* Interactive controls need 3:1 against their background (WCAG 1.4.11),
+     so their border is darker than the decorative divider colour. */
+  --color-border-strong: #6b7280;
+  --color-focus: #b45309;
   --color-error: #dc2626;
-  --color-success: #059669;
-  --color-warning: #d97706;
+  --color-success: #047857;
+  --color-warning: #b45309;
 
   /* Typography */
   --font-family: 'Noto Sans Ethiopic', 'Segoe UI', system-ui, -apple-system, sans-serif;

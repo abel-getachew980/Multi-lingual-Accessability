@@ -13,7 +13,7 @@
 .dropZone {
   margin-top: var(--spacing-md);
   padding: var(--spacing-xl);
-  border: 2px dashed var(--color-border);
+  border: 2px dashed var(--color-border-strong);
   border-radius: 12px;
   background: var(--color-surface);
   text-align: center;

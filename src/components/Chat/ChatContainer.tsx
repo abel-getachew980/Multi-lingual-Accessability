@@ -44,9 +44,9 @@ export function ChatContainer({ className }: ChatContainerProps) {
     ['pending', 'connected', 'in_progress'].includes(humanHelpRequest.status);
 
   return (
-    <div
+    <main
+      id="main-content"
       className={`${styles.chatContainer} ${className || ''}`}
-      role="region"
       aria-label="Chat conversation"
       dir={isRTL ? 'rtl' : 'ltr'}
     >
@@ -95,6 +95,6 @@ export function ChatContainer({ className }: ChatContainerProps) {
         disabled={isLoading}
         language={preferences.language}
       />
-    </div>
+    </main>
   );
 }
