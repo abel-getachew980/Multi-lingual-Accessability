@@ -43,7 +43,9 @@ npm run build
 │   │   └── translations.ts     # Amharic/English
 │   ├── services/               # Business logic
 │   │   ├── ai/                 # Teammate 2: AI providers
+│   │   ├── help/               # Teammate 5: Help queue and signaling
 │   │   ├── storage/            # Teammate 6: Offline storage
+│   │   ├── telegram/           # Teammate 3: Webhook forwarding helpers
 │   │   └── webrtc/             # Teammate 5: Screen sharing
 │   ├── types/                  # TypeScript types
 │   │   └── index.ts            # All type definitions
@@ -62,16 +64,16 @@ npm run build
 
 ## Module Assignments
 
-| Teammate | Module | Files | Branch |
+| Teammate | Module | Files | Status |
 |----------|--------|-------|--------|
-| 1 | Chat UI | `src/components/Chat/` | `feature/chat-ui` |
-| 2 | AI Providers | `src/services/ai/`, `src/app/api/ai/`, `src/components/CourseUploader/`, `src/app/courses/` | `feature/ai-providers` |
-| 3 | Telegram Bot | `telegram-bot/`, `src/app/api/telegram/` | `feature/telegram-bot` |
-| 4 | SMS Gateway | `sms-gateway/`, `src/app/api/sms/` | `feature/sms-gateway` |
-| 5 | Human Help | `src/components/HumanHelp/`, `src/services/webrtc/`, `src/app/api/help/` | `feature/human-help` |
-| 6 | Offline Storage | `src/services/storage/` | `feature/offline-storage` |
-| 7 | Accessibility Tests | `tests/accessibility/`, `src/utils/accessibility.ts` | `feature/accessibility-tests` |
-| 8 | Settings UI | `src/components/Settings/` | `feature/settings-ui` |
+| 1 | Chat UI | `src/components/Chat/` | ✅ Done |
+| 2 | AI Providers | `src/services/ai/`, `src/app/api/ai/`, `src/components/CourseUploader/`, `src/app/courses/` | ✅ Done |
+| 3 | Telegram Bot | `telegram-bot/`, `src/app/api/telegram/` | ✅ Done |
+| 4 | SMS Gateway | `sms-gateway/`, `src/app/api/sms/` | ✅ Done |
+| 5 | Human Help | `src/components/HumanHelp/`, `src/services/webrtc/`, `src/services/help/`, `src/app/api/help/` | ✅ Done |
+| 6 | Offline Storage | `src/services/storage/`, `public/sw.js` (built) | ✅ Done |
+| 7 | Accessibility Tests | `tests/accessibility/`, `src/utils/accessibility.ts` | 🚧 In progress |
+| 8 | Settings UI | `src/components/Settings/` | ✅ Done |
 
 ## Working with Feature Branches
 
@@ -123,9 +125,10 @@ cp .env.example .env
 
 Required for each module:
 - **AI Providers**: `AI_PROVIDER`, `CLOUD_AI_API_KEY`
-- **Telegram Bot**: `TELEGRAM_BOT_TOKEN`
+- **Telegram Bot**: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`; set `TELEGRAM_BOT_URL` so `/api/telegram` can forward updates when the bot runs separately. See [`telegram-bot/README.md`](telegram-bot/README.md).
 - **SMS Gateway**: `SMS_ACCOUNT_SID`, `SMS_AUTH_TOKEN`
-- **Human Help**: `WEBRTC_SIGNALING_SERVER`
+- **Human Help**: optional `HELP_TUTOR_KEY` protects tutor-only actions; `NEXT_PUBLIC_WEBRTC_ICE_SERVERS` adds TURN servers
+- **Voice notes**: optional `TRANSCRIPTION_API_URL` (Whisper-compatible)
 
 ## License
 
