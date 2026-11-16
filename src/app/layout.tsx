@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Noto_Sans_Ethiopic } from 'next/font/google';
+// Self-hosted font: no request to Google Fonts, so the app renders correctly
+// offline and behind restrictive networks.
+import '@fontsource/noto-sans-ethiopic/400.css';
+import '@fontsource/noto-sans-ethiopic/500.css';
+import '@fontsource/noto-sans-ethiopic/600.css';
+import '@fontsource/noto-sans-ethiopic/700.css';
 import './globals.css';
-
-const notoSansEthiopic = Noto_Sans_Ethiopic({
-  subsets: ['ethiopic'],
-  display: 'swap',
-  variable: '--font-ethiopic',
-});
 
 export const metadata: Metadata = {
   title: 'AI Tutor - የአማርኛ ቱቶር',
@@ -43,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="am" dir="ltr" className={notoSansEthiopic.variable}>
+    <html lang="am" dir="ltr">
       <head>
         <meta name="screen-reader-optimized" content="true" />
         <meta name="keyboard-navigation" content="true" />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import {
   Message,
   Language,
@@ -10,6 +10,13 @@ import {
   SettingsUpdate,
 } from '@/types';
 import { announceToScreenReader } from '@/utils/accessibility';
+import {
+  ConversationStore,
+  DEFAULT_PREFERENCES,
+  IndexedDBStore,
+  OfflineQueue,
+  PreferencesStore,
+} from '@/services/storage';
 
 // ============================================
 // TUTOR CONTEXT - COMPLETE IMPLEMENTATION
@@ -39,17 +46,12 @@ interface TutorContextType {
   getLastMessage: () => Message | null;
 }
 
-const defaultPreferences: UserPreferences = {
-  language: 'am',
-  soundEnabled: true,
-  highContrast: false,
-  fontSize: 'normal',
-  keyboardOnlyMode: false,
-  preferredAIProvider: 'offline',
-  screenReaderOptimized: true,
-  autoPlayVoiceResponses: false,
-  reduceMotion: false,
-};
+// Storage singletons. Constructors are lazy, so importing this module during
+// server rendering never touches IndexedDB or localStorage.
+const preferencesStore = new PreferencesStore();
+const storageBackend = new IndexedDBStore();
+const conversationStore = new ConversationStore(storageBackend);
+const offlineQueue = new OfflineQueue(storageBackend);
 
 const TutorContext = createContext<TutorContextType | null>(null);
 
@@ -57,20 +59,123 @@ export function TutorProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
+  const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [humanHelpRequest, setHumanHelpRequest] = useState<HumanHelpRequest | null>(null);
   const [screenShareActive, setScreenShareActive] = useState(false);
+  const hydratedRef = useRef(false);
+
+  // Restore preferences and the previous transcript before the first save, so
+  // defaults never overwrite real data.
+  useEffect(() => {
+    let cancelled = false;
+
+    const hydrate = async () => {
+      const storedPreferences = preferencesStore.get();
+      if (!cancelled) setPreferences(storedPreferences);
+
+      try {
+        const storedMessages = await conversationStore.load();
+        if (!cancelled && storedMessages.length > 0) setMessages(storedMessages);
+      } catch (error) {
+        // IndexedDB unavailable (private mode, blocked storage): run in memory.
+        console.warn('Could not restore the conversation:', error);
+      }
+
+      if (!cancelled) hydratedRef.current = true;
+    };
+
+    void hydrate();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Persist preferences on every change.
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    preferencesStore.set(preferences);
+  }, [preferences]);
+
+  // Persist the transcript, debounced so a burst of messages writes once.
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+
+    const timer = setTimeout(() => {
+      void conversationStore.save(messages).catch((error) => {
+        console.warn('Could not save the conversation:', error);
+      });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  // Re-send anything queued while offline and surface the answers in the chat.
+  const flushOfflineQueue = useCallback(async () => {
+    let result;
+
+    try {
+      result = await offlineQueue.sync();
+    } catch (error) {
+      console.warn('Could not sync the offline queue:', error);
+      return;
+    }
+
+    if (result.sent.length === 0 && result.dropped.length === 0 && result.failed.length === 0) {
+      return;
+    }
+
+    const answers: Message[] = [];
+
+    for (const item of result.sent) {
+      try {
+        const data = JSON.parse(item.body) as {
+          answer?: unknown;
+          citation?: Message['citation'];
+        };
+
+        if (typeof data.answer === 'string' && data.answer.trim()) {
+          answers.push({
+            id: `offline-answer-${item.request.id}`,
+            role: 'assistant',
+            content: data.answer.trim(),
+            language: preferences.language,
+            timestamp: new Date(),
+            citation: data.citation,
+          });
+        }
+      } catch {
+        // Not a JSON answer: nothing useful to show.
+      }
+    }
+
+    if (answers.length > 0) {
+      setMessages(prev => [...prev, ...answers]);
+    }
+
+    const handled = result.sent.length + result.dropped.length;
+
+    if (handled > 0) {
+      announceToScreenReader(
+        preferences.language === 'am'
+          ? `${handled} የተቀመጡ ጥያቄዎች ተልከዋል`
+          : `${handled} saved question${handled === 1 ? '' : 's'} sent`,
+        'polite'
+      );
+    }
+  }, [preferences.language]);
 
   // Monitor online/offline status
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
       announceToScreenReader(
-        preferences.language === 'am' 
-          ? 'የበይነመረብ ግንኙነት ተመልሷል' 
+        preferences.language === 'am'
+          ? 'የበይነመረብ ግንኙነት ተመልሷል'
           : 'Internet connection restored',
         'polite'
       );
+      void flushOfflineQueue();
     };
 
     const handleOffline = () => {
@@ -86,18 +191,25 @@ export function TutorProvider({ children }: { children: ReactNode }) {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // A previous session may have left questions in the queue.
+    if (typeof navigator === 'undefined' || navigator.onLine) {
+      void flushOfflineQueue();
+    } else {
+      setIsOffline(true);
+    }
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [preferences.language]);
+  }, [preferences.language, flushOfflineQueue]);
 
   // Play notification sound
   const playNotificationSound = useCallback(() => {
     if (!preferences.soundEnabled) return;
 
     try {
-      const audioContext = new (window.AudioContext || 
+      const audioContext = new (window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -131,16 +243,54 @@ export function TutorProvider({ children }: { children: ReactNode }) {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    const requestBody = JSON.stringify({
+      question: content,
+      language: preferences.language,
+      provider: preferences.preferredAIProvider,
+    });
+
+    // Offline: save the question and answer it when the connection returns,
+    // instead of showing an error the learner cannot act on.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      try {
+        await offlineQueue.enqueue({
+          url: '/api/ai/query',
+          headers: { 'Content-Type': 'application/json' },
+          body: requestBody,
+          label: content.slice(0, 80),
+        });
+
+        const queuedMessage: Message = {
+          id: `msg-${Date.now()}-queued`,
+          role: 'system',
+          content: preferences.language === 'am'
+            ? 'ከመስመር ውጭ ነዎት። ጥያቄዎ ተቀምጧል፤ ግንኙነት ሲመለስ መልሱ ይመጣል።'
+            : 'You are offline. Your question is saved and will be answered when the connection returns.',
+          language: preferences.language,
+          timestamp: new Date(),
+          isOffline: true,
+        };
+
+        setMessages(prev => [...prev, queuedMessage]);
+        announceToScreenReader(
+          preferences.language === 'am' ? 'ጥያቄው ተቀምጧል' : 'Question saved offline',
+          'polite'
+        );
+        setIsLoading(false);
+        return;
+      } catch (queueError) {
+        // Storage refused the write: fall through so the learner still gets a
+        // clear error instead of a question that vanished.
+        console.warn('Could not queue the offline question:', queueError);
+      }
+    }
+
     try {
       // Call API endpoint
       const response = await fetch('/api/ai/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: content,
-          language: preferences.language,
-          provider: preferences.preferredAIProvider,
-        }),
+        body: requestBody,
       });
 
       if (!response.ok) throw new Error('API request failed');
@@ -255,6 +405,9 @@ export function TutorProvider({ children }: { children: ReactNode }) {
   // Clear history
   const clearHistory = useCallback(() => {
     setMessages([]);
+    void conversationStore.clear().catch(() => {
+      // Nothing else to do: the in-memory transcript is already cleared.
+    });
     announceToScreenReader('Chat history cleared', 'polite');
   }, []);
 
