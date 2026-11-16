@@ -1,0 +1,265 @@
+/* Settings Module Styles */
+
+/* Trigger button in the chat header */
+.settingsButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-duration), border-color var(--transition-duration);
+}
+
+.settingsButton:hover {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+.settingsButton[aria-expanded="true"] {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+/* Backdrop and panel */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background: rgba(15, 23, 42, 0.6);
+  overflow-y: auto;
+}
+
+.panel {
+  width: min(36rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-background);
+  color: var(--color-text);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  line-height: 1.2;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: var(--spacing-xs);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  border-color: var(--color-error);
+}
+
+.description {
+  margin-top: var(--spacing-xs);
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+/* Groups */
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: var(--spacing-sm) 0 0;
+  border: 0;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+}
+
+.inlineOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.stackedOptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Radio and checkbox rows */
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  cursor: pointer;
+}
+
+.option:hover {
+  border-color: var(--color-primary);
+}
+
+.optionSelected {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+.optionStacked {
+  align-items: flex-start;
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optionLabel {
+  font-weight: 600;
+}
+
+.optionDescription {
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.radio,
+.checkbox {
+  flex: 0 0 auto;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.checkbox {
+  margin-top: 0.2rem;
+}
+
+/* Font size preview */
+.fontPreview {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.preview_normal {
+  font-size: 1rem;
+}
+
+.preview_large {
+  font-size: 1.25rem;
+}
+
+.preview_xlarge {
+  font-size: 1.5rem;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryButton {
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.primaryButton:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.secondaryButton {
+  border: 2px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.secondaryButton:hover {
+  border-color: var(--color-primary);
+}
+
+/* Small screens: the label is redundant next to the gear icon, and hiding it
+   keeps the chat header from wrapping awkwardly. It stays available to screen
+   readers through the button's aria-label. */
+@media (max-width: 420px) {
+  .settingsButtonLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .settingsButton {
+    padding: var(--spacing-sm);
+  }
+}

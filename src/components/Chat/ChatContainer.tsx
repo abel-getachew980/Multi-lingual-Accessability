@@ -5,6 +5,7 @@ import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { TypingIndicator } from './TypingIndicator';
 import { HumanHelpButton } from '@/components/HumanHelp/HumanHelpButton';
+import { SettingsDialog } from '@/components/Settings';
 import styles from './Chat.module.css';
 
 /**
@@ -67,6 +68,9 @@ export function ChatContainer({ className }: ChatContainerProps) {
         
         {/* Human help button */}
         <HumanHelpButton />
+
+        {/* Settings dialog and its trigger */}
+        <SettingsDialog />
       </header>
 
       {/* Message list */}

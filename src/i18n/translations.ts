@@ -34,13 +34,22 @@ export const translations = {
 
     // Settings
     settings: 'ቅንብሮች',
+    closeSettings: 'ቅንብሮችን ዝጋ',
+    done: 'ጨርስ',
+    resetSettings: 'ወደ ነባሪ መልስ',
+    settingsDescription: 'የእርስዎን ተሞክሮ ያስተካክሉ። ለውጦቹ ወዲያውኑ ይተገበራሉ።',
     language: 'ቋንቋ',
-    fontSize: 'የቃል መጠን',
+    fontSize: 'የፊደል መጠን',
+    fontSizeNormal: 'መደበኛ',
+    fontSizeLarge: 'ትልቅ',
+    fontSizeXLarge: 'በጣም ትልቅ',
     soundEnabled: 'ድምጽ አንቃ',
     highContrast: 'ከፍተኛ ንጽጽን',
     keyboardMode: 'የቁልፍ ሰሌዳ ብቻ ሁነታ',
     screenReaderMode: 'የስክሪን አንባቢ ሁነታ',
     autoPlayVoice: 'የድምጽ ምላሾችን በራስ-ሰር አጫውት',
+    reduceMotion: 'እንቅስቃሴን ቀንስ',
+    settingsChanged: 'ቅንብሩ ተሻሽሏል',
 
     // AI Provider
     aiProvider: 'AI አቅራቢ',
@@ -98,13 +107,22 @@ export const translations = {
 
     // Settings
     settings: 'Settings',
+    closeSettings: 'Close settings',
+    done: 'Done',
+    resetSettings: 'Reset to defaults',
+    settingsDescription: 'Adjust your experience. Changes apply right away.',
     language: 'Language',
     fontSize: 'Font size',
+    fontSizeNormal: 'Normal',
+    fontSizeLarge: 'Large',
+    fontSizeXLarge: 'Extra large',
     soundEnabled: 'Enable sound',
     highContrast: 'High contrast',
     keyboardMode: 'Keyboard-only mode',
     screenReaderMode: 'Screen reader mode',
     autoPlayVoice: 'Auto-play voice responses',
+    reduceMotion: 'Reduce motion',
+    settingsChanged: 'Setting updated',
 
     // AI Provider
     aiProvider: 'AI Provider',

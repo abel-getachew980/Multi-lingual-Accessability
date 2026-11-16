@@ -188,6 +188,19 @@ body {
   }
 }
 
+/* The learner asked for less motion in Settings. */
+html[data-reduce-motion="true"] * {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* Keyboard-only mode: make the focus ring impossible to miss. */
+html[data-keyboard-only="true"] :focus-visible {
+  outline: 4px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
 /* Print styles */
 @media print {
   .skip-link,
