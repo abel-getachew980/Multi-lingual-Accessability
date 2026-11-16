@@ -183,9 +183,15 @@ export interface HumanHelpRequest {
   status: HumanHelpStatus;
   screenShareEnabled: boolean;
   assignedTutor?: string;
+  /** 1-based place in the pending queue (0 once a tutor has joined). */
+  position?: number;
+  estimatedWaitMinutes?: number;
+  channel?: HumanHelpChannel;
 }
 
 export type HumanHelpStatus = 'pending' | 'connected' | 'in_progress' | 'resolved' | 'cancelled';
+
+export type HumanHelpChannel = 'web' | 'sms' | 'telegram';
 
 export interface WebRTCConfig {
   iceServers: RTCIceServer[];

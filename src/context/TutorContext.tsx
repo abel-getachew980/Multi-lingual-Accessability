@@ -7,6 +7,7 @@ import {
   AIProvider,
   UserPreferences,
   HumanHelpRequest,
+  HumanHelpStatus,
   SettingsUpdate,
 } from '@/types';
 import { announceToScreenReader } from '@/utils/accessibility';
@@ -29,15 +30,18 @@ interface TutorContextType {
   isOffline: boolean;
   preferences: UserPreferences;
   humanHelpRequest: HumanHelpRequest | null;
+  humanHelpError: string | null;
+  isRequestingHelp: boolean;
   screenShareActive: boolean;
 
   // Actions
   sendMessage: (content: string) => Promise<void>;
   setLanguage: (lang: Language) => void;
   setAIProvider: (provider: AIProvider) => void;
-  requestHumanHelp: () => void;
-  cancelHumanHelp: () => void;
-  toggleScreenShare: () => void;
+  requestHumanHelp: () => Promise<void>;
+  cancelHumanHelp: () => Promise<void>;
+  clearHumanHelpError: () => void;
+  setScreenShareActive: (active: boolean) => void;
   clearHistory: () => void;
   updatePreferences: (prefs: SettingsUpdate) => void;
 
@@ -55,13 +59,55 @@ const offlineQueue = new OfflineQueue(storageBackend);
 
 const TutorContext = createContext<TutorContextType | null>(null);
 
+// ============================================
+// HUMAN HELP HELPERS
+// ============================================
+
+const HELP_POLL_INTERVAL_MS = 5_000;
+
+const HELP_STATUSES: HumanHelpStatus[] = [
+  'pending',
+  'connected',
+  'in_progress',
+  'resolved',
+  'cancelled',
+];
+
+const ACTIVE_HELP_STATUSES: HumanHelpStatus[] = ['pending', 'connected', 'in_progress'];
+
+interface HelpApiPayload {
+  success?: boolean;
+  requestId?: unknown;
+  id?: unknown;
+  status?: unknown;
+  position?: unknown;
+  estimatedWaitMinutes?: unknown;
+  assignedTutor?: unknown;
+  screenShareEnabled?: unknown;
+  error?: { message?: unknown };
+}
+
+function parseHelpStatus(value: unknown, fallback: HumanHelpStatus): HumanHelpStatus {
+  return typeof value === 'string' && (HELP_STATUSES as string[]).includes(value)
+    ? (value as HumanHelpStatus)
+    : fallback;
+}
+
+function optionalNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? value
+    : undefined;
+}
+
 export function TutorProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [humanHelpRequest, setHumanHelpRequest] = useState<HumanHelpRequest | null>(null);
-  const [screenShareActive, setScreenShareActive] = useState(false);
+  const [humanHelpError, setHumanHelpError] = useState<string | null>(null);
+  const [isRequestingHelp, setIsRequestingHelp] = useState(false);
+  const [screenShareActive, setScreenShareActiveState] = useState(false);
   const hydratedRef = useRef(false);
 
   // Restore preferences and the previous transcript before the first save, so
@@ -351,56 +397,238 @@ export function TutorProvider({ children }: { children: ReactNode }) {
     announceToScreenReader(`AI provider changed to ${provider}`, 'polite');
   }, []);
 
-  // Request human help
-  const requestHumanHelp = useCallback(() => {
-    const request: HumanHelpRequest = {
-      id: `help-${Date.now()}`,
-      userId: 'current-user', // TODO: Get from auth
-      conversationHistory: messages,
-      timestamp: new Date(),
-      status: 'pending',
-      screenShareEnabled: false,
-    };
+  // Request human help. Nothing is shown as "requested" until the API has
+  // accepted the ticket, so the UI never claims a tutor was contacted by
+  // mistake.
+  const requestHumanHelp = useCallback(async () => {
+    if (humanHelpRequest && ACTIVE_HELP_STATUSES.includes(humanHelpRequest.status)) {
+      return;
+    }
 
-    setHumanHelpRequest(request);
+    if (isRequestingHelp) return;
 
-    const systemMessage: Message = {
-      id: `msg-${Date.now()}`,
-      role: 'system',
-      content: preferences.language === 'am'
-        ? 'የሰው እርዳታ ተጠይቋል። እባክዎ ይጠብቁ...'
-        : 'Human help requested. Please wait...',
-      language: preferences.language,
-      timestamp: new Date(),
-    };
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setHumanHelpError(
+        preferences.language === 'am'
+          ? 'እርዳታ ለመጠየቅ የኢንተርኔት ግንኙነት ያስፈልጋል።'
+          : 'An internet connection is required to request help.',
+      );
+      return;
+    }
 
-    setMessages(prev => [...prev, systemMessage]);
-    announceToScreenReader(
-      preferences.language === 'am' ? 'እርዳታ ተጠይቋል' : 'Help requested',
-      'assertive'
-    );
-  }, [messages, preferences.language]);
+    setIsRequestingHelp(true);
+    setHumanHelpError(null);
 
-  // Cancel human help
-  const cancelHumanHelp = useCallback(() => {
-    setHumanHelpRequest(null);
-    setScreenShareActive(false);
-    announceToScreenReader('Human help cancelled', 'polite');
+    const history = messages
+      .slice(-20)
+      .map((message) => ({ role: message.role, content: message.content }));
+
+    try {
+      const response = await fetch('/api/help', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'current-user',
+          channel: 'web',
+          language: preferences.language,
+          conversationHistory: history,
+          screenShareEnabled: false,
+        }),
+        cache: 'no-store',
+      });
+
+      const data = (await response
+        .json()
+        .catch(() => null)) as HelpApiPayload | null;
+
+      const requestId = data?.requestId ?? data?.id;
+
+      if (!response.ok || !data || data.success === false || typeof requestId !== 'string') {
+        const apiMessage =
+          typeof data?.error?.message === 'string' ? data.error.message : null;
+        throw new Error(apiMessage ?? `Help API responded with ${response.status}`);
+      }
+
+      const position = optionalNumber(data.position);
+
+      setHumanHelpRequest({
+        id: requestId,
+        userId: 'current-user',
+        conversationHistory: messages,
+        timestamp: new Date(),
+        status: parseHelpStatus(data.status, 'pending'),
+        screenShareEnabled: data.screenShareEnabled === true,
+        assignedTutor:
+          typeof data.assignedTutor === 'string' ? data.assignedTutor : undefined,
+        position,
+        estimatedWaitMinutes: optionalNumber(data.estimatedWaitMinutes),
+        channel: 'web',
+      });
+
+      const systemMessage: Message = {
+        id: `msg-${Date.now()}-help`,
+        role: 'system',
+        content:
+          preferences.language === 'am'
+            ? `የሰው እርዳታ ተጠይቋል።${
+                position && position > 0 ? ` በሰልፍ ቦታዎ ${position} ነው።` : ''
+              }`
+            : `Human help requested.${
+                position && position > 0
+                  ? ` You are number ${position} in the queue.`
+                  : ''
+              }`,
+        language: preferences.language,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, systemMessage]);
+    } catch (error) {
+      console.error('Could not request human help:', error);
+      setHumanHelpError(
+        preferences.language === 'am'
+          ? 'እርዳታ መጠየቅ አልተቻለም። እባክዎ እንደገና ይሞክሩ።'
+          : 'Could not request help. Please try again.',
+      );
+    } finally {
+      setIsRequestingHelp(false);
+    }
+  }, [
+    humanHelpRequest,
+    isRequestingHelp,
+    messages,
+    preferences.language,
+  ]);
+
+  // Cancel the active ticket. The request stays visible if the server cannot
+  // be reached, because the tutor may still be on the way.
+  const cancelHumanHelp = useCallback(async () => {
+    const current = humanHelpRequest;
+    if (!current) return;
+
+    setHumanHelpError(null);
+
+    try {
+      const response = await fetch(
+        `/api/help?id=${encodeURIComponent(current.id)}`,
+        { method: 'DELETE', cache: 'no-store' },
+      );
+
+      if (!response.ok && response.status !== 404) {
+        throw new Error(`Help API responded with ${response.status}`);
+      }
+
+      setHumanHelpRequest(null);
+      setScreenShareActiveState(false);
+
+      const systemMessage: Message = {
+        id: `msg-${Date.now()}-help-cancelled`,
+        role: 'system',
+        content:
+          preferences.language === 'am'
+            ? 'የሰው እርዳታ ጥያቄው ተሰርዟል።'
+            : 'The human help request was cancelled.',
+        language: preferences.language,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, systemMessage]);
+      announceToScreenReader(
+        preferences.language === 'am'
+          ? 'የእርዳታ ጥያቄው ተሰርዟል'
+          : 'Human help request cancelled',
+        'polite',
+      );
+    } catch (error) {
+      console.error('Could not cancel human help:', error);
+      setHumanHelpError(
+        preferences.language === 'am'
+          ? 'ጥያቄውን መሰረዝ አልተቻለም። እባክዎ እንደገና ይሞክሩ።'
+          : 'Could not cancel the request. Please try again.',
+      );
+    }
+  }, [humanHelpRequest, preferences.language]);
+
+  const clearHumanHelpError = useCallback(() => {
+    setHumanHelpError(null);
   }, []);
 
-  // Toggle screen share
-  const toggleScreenShare = useCallback(() => {
-    if (!humanHelpRequest) return;
+  // Watch the queue while a request is active. Polling keeps working on hosts
+  // without WebSocket support; the interval is short enough to feel live but
+  // does not hammer a 3G connection.
+  useEffect(() => {
+    const current = humanHelpRequest;
 
-    setScreenShareActive(prev => {
-      const newState = !prev;
-      announceToScreenReader(
-        newState ? 'Screen sharing started' : 'Screen sharing stopped',
-        'polite'
-      );
-      return newState;
-    });
-  }, [humanHelpRequest]);
+    if (!current || !ACTIVE_HELP_STATUSES.includes(current.status)) return;
+
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(
+          `/api/help?id=${encodeURIComponent(current.id)}`,
+          { cache: 'no-store' },
+        );
+
+        if (response.status === 404) {
+          if (!stopped) {
+            setHumanHelpRequest(prev =>
+              prev && prev.id === current.id ? null : prev,
+            );
+            setHumanHelpError(
+              preferences.language === 'am'
+                ? 'የእርዳታ ጥያቄው አልተገኘም።'
+                : 'The help request could not be found.',
+            );
+          }
+          return;
+        }
+
+        if (response.ok) {
+          const data = (await response.json()) as HelpApiPayload;
+
+          if (!stopped && data.success !== false) {
+            setHumanHelpRequest(prev => {
+              if (!prev || prev.id !== current.id) return prev;
+
+              return {
+                ...prev,
+                status: parseHelpStatus(data.status, prev.status),
+                position: optionalNumber(data.position) ?? prev.position,
+                estimatedWaitMinutes:
+                  optionalNumber(data.estimatedWaitMinutes) ??
+                  prev.estimatedWaitMinutes,
+                assignedTutor:
+                  typeof data.assignedTutor === 'string'
+                    ? data.assignedTutor
+                    : prev.assignedTutor,
+              };
+            });
+          }
+        }
+      } catch {
+        // A transient network failure is not fatal: keep the ticket and retry.
+      }
+
+      if (!stopped) {
+        timer = setTimeout(poll, HELP_POLL_INTERVAL_MS);
+      }
+    };
+
+    timer = setTimeout(poll, HELP_POLL_INTERVAL_MS);
+
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [humanHelpRequest?.id, humanHelpRequest?.status, preferences.language]);
+
+  // Screen sharing is owned by the media handler; the context only mirrors the
+  // state so the rest of the UI stays in sync.
+  const setScreenShareActive = useCallback((active: boolean) => {
+    setScreenShareActiveState(active);
+  }, []);
 
   // Clear history
   const clearHistory = useCallback(() => {
@@ -426,13 +654,16 @@ export function TutorProvider({ children }: { children: ReactNode }) {
     isOffline,
     preferences,
     humanHelpRequest,
+    humanHelpError,
+    isRequestingHelp,
     screenShareActive,
     sendMessage,
     setLanguage,
     setAIProvider,
     requestHumanHelp,
     cancelHumanHelp,
-    toggleScreenShare,
+    clearHumanHelpError,
+    setScreenShareActive,
     clearHistory,
     updatePreferences,
     getMessageCount,

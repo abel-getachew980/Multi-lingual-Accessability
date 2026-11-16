@@ -39,6 +39,9 @@ export function ChatContainer({ className }: ChatContainerProps) {
   };
 
   const isRTL = preferences.language === 'am';
+  const isHelpActive =
+    humanHelpRequest !== null &&
+    ['pending', 'connected', 'in_progress'].includes(humanHelpRequest.status);
 
   return (
     <div
@@ -59,7 +62,7 @@ export function ChatContainer({ className }: ChatContainerProps) {
             </span>
           )}
           
-          {humanHelpRequest && (
+          {isHelpActive && (
             <span className={styles.helpActiveBadge} role="status">
               {preferences.language === 'am' ? 'እርዳታ ንቁ' : 'Help Active'}
             </span>

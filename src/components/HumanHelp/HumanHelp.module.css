@@ -1,14 +1,20 @@
 /* HumanHelp Module Styles */
 
+/* Header trigger */
 .helpButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-height: 44px;
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--color-success);
-  color: white;
+  color: #ffffff;
   border: 2px solid var(--color-success);
   border-radius: 8px;
+  font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-duration);
+  transition: background var(--transition-duration), border-color var(--transition-duration);
 }
 
 .helpButton:hover {
@@ -16,7 +22,164 @@
   border-color: var(--color-primary-dark);
 }
 
-.helpButton[aria-pressed="true"] {
-  background: var(--color-error);
+.helpButtonActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Dialog */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background: rgba(15, 23, 42, 0.6);
+  overflow-y: auto;
+}
+
+.panel {
+  width: min(34rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-background);
+  color: var(--color-text);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  line-height: 1.2;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: var(--spacing-xs);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+}
+
+.closeButton:hover {
   border-color: var(--color-error);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  line-height: 1.6;
+}
+
+.sectionTitle {
+  font-size: var(--font-size-lg);
+}
+
+.note {
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+}
+
+.statusText {
+  font-weight: 600;
+}
+
+.error {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--color-error);
+  border-radius: 8px;
+  color: var(--color-error);
+  background: var(--color-surface);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.primaryButton,
+.secondaryButton,
+.shareStartButton,
+.shareStopButton {
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryButton,
+.shareStartButton {
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.primaryButton:hover,
+.shareStartButton:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.secondaryButton {
+  border: 2px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.secondaryButton:hover {
+  border-color: var(--color-primary);
+}
+
+.primaryButton:disabled,
+.shareStartButton:disabled,
+.shareStopButton:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+/* Screen sharing */
+.screenShare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.shareStopButton {
+  border: 2px solid var(--color-error);
+  background: var(--color-error);
+  color: #ffffff;
+}
+
+.shareStopButton:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
